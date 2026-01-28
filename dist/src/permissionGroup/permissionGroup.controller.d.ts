@@ -3,8 +3,8 @@ export declare class PermissionGroupController {
     private readonly permissionGroupService;
     constructor(permissionGroupService: PermissionGroupService);
     getPermissionGroups(): Promise<{
-        id: string;
         name: string;
+        id: string;
         permissionSubGroup: ({
             name: string;
         } & {

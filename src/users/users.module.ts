@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { KeycloakModule } from 'src/keycloak/keycloak.module';
-import { UsersController } from './users.controller';
+import { Global, Module } from "@nestjs/common";
+import { UsersService } from "./users.service";
+import { KeycloakModule } from "src/keycloak/keycloak.module";
+import { UsersController } from "./users.controller";
 
 @Global()
 @Module({

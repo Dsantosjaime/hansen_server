@@ -5,8 +5,8 @@ export declare class RoleController {
     private readonly roleService;
     constructor(roleService: RoleService);
     create(dto: CreateRoleDto): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -14,8 +14,8 @@ export declare class RoleController {
         }[];
     }>;
     findAll(): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -23,8 +23,8 @@ export declare class RoleController {
         }[];
     }[]>;
     findOne(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -32,8 +32,8 @@ export declare class RoleController {
         }[];
     }>;
     update(id: string, dto: UpdateRoleDto): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -41,8 +41,8 @@ export declare class RoleController {
         }[];
     }>;
     remove(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;

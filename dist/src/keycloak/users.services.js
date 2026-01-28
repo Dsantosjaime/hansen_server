@@ -54,19 +54,42 @@ let KeycloakAdminUsersService = class KeycloakAdminUsersService {
     async getClient() {
         if (this.kc)
             return this.kc;
-        const mod = await Promise.resolve().then(() => __importStar(require('@keycloak/keycloak-admin-client')));
+        const mod = await Promise.resolve().then(() => __importStar(require("@keycloak/keycloak-admin-client")));
         const KcAdminClient = mod.default;
         this.kc = new KcAdminClient({
-            baseUrl: this.config.getOrThrow('KEYCLOAK_BASE_URL'),
-            realmName: this.config.getOrThrow('KEYCLOAK_REALM'),
+            baseUrl: this.config.getOrThrow("KEYCLOAK_BASE_URL"),
+            realmName: this.config.getOrThrow("KEYCLOAK_REALM"),
         });
         return this.kc;
     }
     async authAdmin(kc) {
         await kc.auth({
-            grantType: 'client_credentials',
-            clientId: this.config.getOrThrow('KEYCLOAK_ADMIN_CLIENT_ID'),
-            clientSecret: this.config.getOrThrow('KEYCLOAK_CLIENT_SECRET'),
+            grantType: "client_credentials",
+            clientId: this.config.getOrThrow("KEYCLOAK_ADMIN_CLIENT_ID"),
+            clientSecret: this.config.getOrThrow("KEYCLOAK_CLIENT_SECRET"),
+        });
+    }
+    normalizeUser(id, raw) {
+        const u = (raw ?? {});
+        return {
+            id,
+            email: typeof u.email === "string" ? u.email : undefined,
+            username: typeof u.username === "string" ? u.username : undefined,
+            firstName: typeof u.firstName === "string" ? u.firstName : undefined,
+            lastName: typeof u.lastName === "string" ? u.lastName : undefined,
+            enabled: typeof u.enabled === "boolean" ? u.enabled : undefined,
+        };
+    }
+    async setTemporaryPassword(keycloakUserId, password, temporary = true) {
+        const kc = await this.getClient();
+        await this.authAdmin(kc);
+        await kc.users.resetPassword({
+            id: keycloakUserId,
+            credential: {
+                type: "password",
+                value: password,
+                temporary,
+            },
         });
     }
     async createUser(name, email, temporaryPassword) {
@@ -79,26 +102,41 @@ let KeycloakAdminUsersService = class KeycloakAdminUsersService {
             enabled: true,
         });
         if (!created.id) {
-            throw new common_1.InternalServerErrorException('Keycloak did not return user id');
+            throw new common_1.InternalServerErrorException("Keycloak did not return user id");
         }
-        await kc.users.resetPassword({
-            id: created.id,
-            credential: {
-                type: 'password',
-                value: temporaryPassword,
-                temporary: true,
-            },
-        });
+        await this.setTemporaryPassword(created.id, temporaryPassword, true);
         const raw = (await kc.users.findOne({ id: created.id }));
-        const u = (raw ?? {});
-        return {
-            id: created.id,
-            email: typeof u.email === 'string' ? u.email : undefined,
-            username: typeof u.username === 'string' ? u.username : undefined,
-            firstName: typeof u.firstName === 'string' ? u.firstName : undefined,
-            lastName: typeof u.lastName === 'string' ? u.lastName : undefined,
-            enabled: typeof u.enabled === 'boolean' ? u.enabled : undefined,
-        };
+        return this.normalizeUser(created.id, raw);
+    }
+    async updateUser(keycloakUserId, input) {
+        const kc = await this.getClient();
+        await this.authAdmin(kc);
+        const data = {};
+        if (input.email !== undefined) {
+            if (input.email === null) {
+            }
+            else {
+                data.email = input.email;
+                data.username = input.email;
+            }
+        }
+        if (input.name !== undefined) {
+            if (input.name === null)
+                data.firstName = "";
+            else
+                data.firstName = input.name;
+        }
+        if (input.enabled !== undefined) {
+            data.enabled = input.enabled;
+        }
+        if (Object.keys(data).length > 0) {
+            await kc.users.update({ id: keycloakUserId }, data);
+        }
+        const raw = (await kc.users.findOne({ id: keycloakUserId }));
+        if (!raw) {
+            throw new common_1.InternalServerErrorException("Keycloak user not found after update (unexpected)");
+        }
+        return this.normalizeUser(keycloakUserId, raw);
     }
     async deleteUser(keycloakUserId) {
         const kc = await this.getClient();

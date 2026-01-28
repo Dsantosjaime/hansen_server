@@ -48,8 +48,8 @@ exports.Sql = runtime.Sql;
 exports.Decimal = runtime.Decimal;
 exports.getExtensionContext = runtime.Extensions.getExtensionContext;
 exports.prismaVersion = {
-    client: "6.19.0",
-    engine: "2ba551f319ab1df4bc874a89965d8b3641056773"
+    client: "6.19.2",
+    engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
 };
 exports.NullTypes = {
     DbNull: runtime.objectEnumValues.classes.DbNull,

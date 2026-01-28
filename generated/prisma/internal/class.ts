@@ -23,7 +23,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "/Users/dossantosjaime/Documents/Pro/Hansen/hansen_server/hansen_server/generated/prisma",
+      "value": "/Users/dossantosjaime/Documents/Pro/Hansen/hansen_server/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -37,12 +37,12 @@ const config: runtime.GetPrismaClientConfig = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/dossantosjaime/Documents/Pro/Hansen/hansen_server/hansen_server/prisma/schema.prisma",
+    "sourceFilePath": "/Users/dossantosjaime/Documents/Pro/Hansen/hansen_server/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativePath": "../../prisma",
-  "clientVersion": "6.19.0",
-  "engineVersion": "2ba551f319ab1df4bc874a89965d8b3641056773",
+  "clientVersion": "6.19.2",
+  "engineVersion": "c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
   "datasourceNames": [
     "db"
   ],
