@@ -1,0 +1,13 @@
+import * as runtime from "@prisma/client/runtime/library";
+import * as $Class from "./internal/class";
+import * as Prisma from "./internal/prismaNamespace";
+export * as $Enums from './enums';
+export * from "./enums";
+export declare const PrismaClient: $Class.PrismaClientConstructor;
+export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts extends Prisma.PrismaClientOptions["omit"] = Prisma.PrismaClientOptions["omit"], ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = $Class.PrismaClient<LogOpts, OmitOpts, ExtArgs>;
+export { Prisma };
+export type Permission = Prisma.PermissionModel;
+export type PermissionSubGroup = Prisma.PermissionSubGroupModel;
+export type User = Prisma.UserModel;
+export type PermissionGroup = Prisma.PermissionGroupModel;
+export type Role = Prisma.RoleModel;
