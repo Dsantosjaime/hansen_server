@@ -53,3 +53,19 @@ model Role {
   users       User[]
   @@index([name])
 }
+
+model Group {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  subGroups SubGroup[]
+}
+
+model SubGroup {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  @@index([groupId])
+}

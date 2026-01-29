@@ -15,6 +15,8 @@ const users_module_1 = require("./users/users.module");
 const casl_module_1 = require("./casl/casl.module");
 const permissionGroup_module_1 = require("./permissionGroup/permissionGroup.module");
 const role_modules_1 = require("./role/role.modules");
+const groups_module_1 = require("./groups/groups.module");
+const subgroups_module_1 = require("./subgroups/subgroups.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -28,6 +30,8 @@ exports.AppModule = AppModule = __decorate([
             casl_module_1.CaslModule,
             permissionGroup_module_1.PermissionGroupModule,
             role_modules_1.RoleModule,
+            groups_module_1.GroupsModule,
+            subgroups_module_1.SubGroupsModule,
         ],
     })
 ], AppModule);

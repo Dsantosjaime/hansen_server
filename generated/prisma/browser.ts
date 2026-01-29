@@ -42,3 +42,13 @@ export type PermissionGroup = Prisma.PermissionGroupModel
  * 
  */
 export type Role = Prisma.RoleModel
+/**
+ * Model Group
+ * 
+ */
+export type Group = Prisma.GroupModel
+/**
+ * Model SubGroup
+ * 
+ */
+export type SubGroup = Prisma.SubGroupModel

@@ -7,3 +7,5 @@ export type PermissionSubGroup = Prisma.PermissionSubGroupModel;
 export type User = Prisma.UserModel;
 export type PermissionGroup = Prisma.PermissionGroupModel;
 export type Role = Prisma.RoleModel;
+export type Group = Prisma.GroupModel;
+export type SubGroup = Prisma.SubGroupModel;

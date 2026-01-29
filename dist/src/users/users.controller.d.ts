@@ -15,10 +15,10 @@ export declare class UsersController {
             }[];
         } | null;
     } & {
+        email: string | null;
         name: string | null;
         id: string;
         keycloakId: string;
-        email: string | null;
         roleId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -34,10 +34,10 @@ export declare class UsersController {
             }[];
         } | null;
     } & {
+        email: string | null;
         name: string | null;
         id: string;
         keycloakId: string;
-        email: string | null;
         roleId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -53,10 +53,10 @@ export declare class UsersController {
             }[];
         } | null;
     } & {
+        email: string | null;
         name: string | null;
         id: string;
         keycloakId: string;
-        email: string | null;
         roleId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -72,10 +72,10 @@ export declare class UsersController {
             }[];
         } | null;
     } & {
+        email: string | null;
         name: string | null;
         id: string;
         keycloakId: string;
-        email: string | null;
         roleId: string | null;
         createdAt: Date;
         updatedAt: Date;

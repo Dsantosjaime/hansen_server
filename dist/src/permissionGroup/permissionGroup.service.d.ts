@@ -3,8 +3,8 @@ export declare class PermissionGroupService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     getPermissionGroups(): Promise<{
-        id: string;
         name: string;
+        id: string;
         permissionSubGroup: ({
             name: string;
         } & {

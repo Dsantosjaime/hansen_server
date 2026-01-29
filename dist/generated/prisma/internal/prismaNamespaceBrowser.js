@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryMode = exports.SortOrder = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.QueryMode = exports.SortOrder = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -47,7 +47,9 @@ exports.AnyNull = runtime.objectEnumValues.instances.AnyNull;
 exports.ModelName = {
     User: 'User',
     PermissionGroup: 'PermissionGroup',
-    Role: 'Role'
+    Role: 'Role',
+    Group: 'Group',
+    SubGroup: 'SubGroup'
 };
 exports.UserScalarFieldEnum = {
     id: 'id',
@@ -66,6 +68,15 @@ exports.RoleScalarFieldEnum = {
     id: 'id',
     name: 'name',
     isSystem: 'isSystem'
+};
+exports.GroupScalarFieldEnum = {
+    id: 'id',
+    name: 'name'
+};
+exports.SubGroupScalarFieldEnum = {
+    id: 'id',
+    name: 'name',
+    groupId: 'groupId'
 };
 exports.SortOrder = {
     asc: 'asc',

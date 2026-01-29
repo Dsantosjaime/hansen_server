@@ -5,8 +5,8 @@ export declare class RoleService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     create(dto: CreateRoleDto): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -14,8 +14,8 @@ export declare class RoleService {
         }[];
     }>;
     findAll(): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -23,8 +23,8 @@ export declare class RoleService {
         }[];
     }[]>;
     findOne(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -32,8 +32,8 @@ export declare class RoleService {
         }[];
     }>;
     update(id: string, dto: UpdateRoleDto): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;
@@ -41,8 +41,8 @@ export declare class RoleService {
         }[];
     }>;
     remove(id: string): Promise<{
-        id: string;
         name: string;
+        id: string;
         isSystem: boolean;
         permissions: {
             subject: string;

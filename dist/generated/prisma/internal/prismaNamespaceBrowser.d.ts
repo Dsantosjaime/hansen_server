@@ -29,6 +29,8 @@ export declare const ModelName: {
     readonly User: "User";
     readonly PermissionGroup: "PermissionGroup";
     readonly Role: "Role";
+    readonly Group: "Group";
+    readonly SubGroup: "SubGroup";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const UserScalarFieldEnum: {
@@ -52,6 +54,17 @@ export declare const RoleScalarFieldEnum: {
     readonly isSystem: "isSystem";
 };
 export type RoleScalarFieldEnum = (typeof RoleScalarFieldEnum)[keyof typeof RoleScalarFieldEnum];
+export declare const GroupScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+};
+export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum];
+export declare const SubGroupScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly groupId: "groupId";
+};
+export type SubGroupScalarFieldEnum = (typeof SubGroupScalarFieldEnum)[keyof typeof SubGroupScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
