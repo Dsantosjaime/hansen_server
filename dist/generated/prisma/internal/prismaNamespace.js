@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defineExtension = exports.QueryMode = exports.SortOrder = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
+exports.defineExtension = exports.QueryMode = exports.SortOrder = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/library"));
 exports.PrismaClientKnownRequestError = runtime.PrismaClientKnownRequestError;
 exports.PrismaClientUnknownRequestError = runtime.PrismaClientUnknownRequestError;
@@ -64,7 +64,9 @@ exports.ModelName = {
     PermissionGroup: 'PermissionGroup',
     Role: 'Role',
     Group: 'Group',
-    SubGroup: 'SubGroup'
+    SubGroup: 'SubGroup',
+    Contact: 'Contact',
+    EmailSend: 'EmailSend'
 };
 exports.UserScalarFieldEnum = {
     id: 'id',
@@ -91,7 +93,37 @@ exports.GroupScalarFieldEnum = {
 exports.SubGroupScalarFieldEnum = {
     id: 'id',
     name: 'name',
-    groupId: 'groupId'
+    groupId: 'groupId',
+    brevoListId: 'brevoListId'
+};
+exports.ContactScalarFieldEnum = {
+    id: 'id',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    function: 'function',
+    status: 'status',
+    email: 'email',
+    phoneNumber: 'phoneNumber',
+    lastContact: 'lastContact',
+    lastEmail: 'lastEmail',
+    groupId: 'groupId',
+    subGroupId: 'subGroupId'
+};
+exports.EmailSendScalarFieldEnum = {
+    id: 'id',
+    contactId: 'contactId',
+    email: 'email',
+    brevoCampaignId: 'brevoCampaignId',
+    subject: 'subject',
+    status: 'status',
+    sentAt: 'sentAt',
+    deliveredAt: 'deliveredAt',
+    openedAt: 'openedAt',
+    clickedAt: 'clickedAt',
+    bouncedAt: 'bouncedAt',
+    unsubscribedAt: 'unsubscribedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 };
 exports.SortOrder = {
     asc: 'asc',

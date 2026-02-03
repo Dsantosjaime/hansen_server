@@ -12,20 +12,20 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
     }));
     app.enableCors({
-        origin: ['http://localhost:8081'],
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Authorization', 'Content-Type'],
+        origin: ["http://localhost:8081"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Authorization", "Content-Type"],
         credentials: true,
     });
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== "production") {
         const config = new swagger_1.DocumentBuilder()
-            .setTitle('Hansen API')
-            .setDescription('API documentation')
-            .setVersion('1.0.0')
-            .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'jwt')
+            .setTitle("Hansen API")
+            .setDescription("API documentation")
+            .setVersion("1.0.0")
+            .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" }, "jwt")
             .build();
         const document = swagger_1.SwaggerModule.createDocument(app, config);
-        swagger_1.SwaggerModule.setup('api', app, document);
+        swagger_1.SwaggerModule.setup("api", app, document);
     }
     await app.listen(process.env.PORT ?? 3000);
 }

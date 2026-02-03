@@ -67,5 +67,46 @@ model SubGroup {
   groupId String @db.ObjectId
   group   Group  @relation(fields: [groupId], references: [id])
 
+  brevoListId Int? 
+
   @@index([groupId])
+}
+
+model Contact {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  firstName   String
+  lastName    String
+  function    String
+  status      String
+  email       String @unique
+  phoneNumber String[]
+  lastContact String
+  lastEmail   String
+  groupId     String @db.ObjectId
+  subGroupId  String @db.ObjectId
+}
+
+model EmailSend {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  contactId       String?  @db.ObjectId
+  email           String
+  brevoCampaignId String
+  subject         String
+  status          String
+
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  unsubscribedAt  DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([email])
+  @@index([brevoCampaignId])
+  @@unique([brevoCampaignId, email])
 }

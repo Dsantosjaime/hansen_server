@@ -13,3 +13,5 @@ export type PermissionGroup = Prisma.PermissionGroupModel;
 export type Role = Prisma.RoleModel;
 export type Group = Prisma.GroupModel;
 export type SubGroup = Prisma.SubGroupModel;
+export type Contact = Prisma.ContactModel;
+export type EmailSend = Prisma.EmailSendModel;

@@ -8,6 +8,8 @@ import { PermissionGroupModule } from "./permissionGroup/permissionGroup.module"
 import { RoleModule } from "./role/role.modules";
 import { GroupsModule } from "./groups/groups.module";
 import { SubGroupsModule } from "./subgroups/subgroups.module";
+import { ContactsModule } from "./contacts/contacts.module";
+import { EmailModule } from "./email/email.module";
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { SubGroupsModule } from "./subgroups/subgroups.module";
     RoleModule,
     GroupsModule,
     SubGroupsModule,
+    ContactsModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateSubGroupDto } from "./dto/create-sub-group.dto";
 import { UpdateSubGroupDto } from "./dto/update-sub-group.dto";
+import { BrevoMarketingService } from "src/brevo/brevo-marketing.service";
 
 @Injectable()
 export class SubGroupsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly brevoMarketing: BrevoMarketingService,
+  ) {}
 
   private async assertGroupExists(groupId: string) {
     const exists = await this.prisma.group.findUnique({
@@ -17,11 +21,20 @@ export class SubGroupsService {
   async create(dto: CreateSubGroupDto) {
     await this.assertGroupExists(dto.groupId);
 
-    return this.prisma.subGroup.create({
+    const created = await this.prisma.subGroup.create({
       data: {
         name: dto.name,
         group: { connect: { id: dto.groupId } },
       },
+      include: { group: true },
+    });
+
+    // Auto: crée la liste Brevo si absente, et stocke brevoListId
+    await this.brevoMarketing.ensureBrevoListForSubGroup(created.id);
+
+    // Re-fetch pour retourner brevoListId (optionnel mais pratique)
+    return this.prisma.subGroup.findUnique({
+      where: { id: created.id },
       include: { group: true },
     });
   }

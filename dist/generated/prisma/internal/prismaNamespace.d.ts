@@ -181,6 +181,8 @@ export declare const ModelName: {
     readonly Role: "Role";
     readonly Group: "Group";
     readonly SubGroup: "SubGroup";
+    readonly Contact: "Contact";
+    readonly EmailSend: "EmailSend";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export interface TypeMapCb<GlobalOmitOptions = {}> extends runtime.Types.Utils.Fn<{
@@ -193,7 +195,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup";
+        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend";
         txIsolationLevel: never;
     };
     model: {
@@ -567,6 +569,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        Contact: {
+            payload: Prisma.$ContactPayload<ExtArgs>;
+            fields: Prisma.ContactFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.ContactFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.ContactFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                findFirst: {
+                    args: Prisma.ContactFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.ContactFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                findMany: {
+                    args: Prisma.ContactFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>[];
+                };
+                create: {
+                    args: Prisma.ContactCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                createMany: {
+                    args: Prisma.ContactCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.ContactDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                update: {
+                    args: Prisma.ContactUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.ContactDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.ContactUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.ContactUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactPayload>;
+                };
+                aggregate: {
+                    args: Prisma.ContactAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateContact>;
+                };
+                groupBy: {
+                    args: Prisma.ContactGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ContactGroupByOutputType>[];
+                };
+                findRaw: {
+                    args: Prisma.ContactFindRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                aggregateRaw: {
+                    args: Prisma.ContactAggregateRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                count: {
+                    args: Prisma.ContactCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ContactCountAggregateOutputType> | number;
+                };
+            };
+        };
+        EmailSend: {
+            payload: Prisma.$EmailSendPayload<ExtArgs>;
+            fields: Prisma.EmailSendFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.EmailSendFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.EmailSendFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                findFirst: {
+                    args: Prisma.EmailSendFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.EmailSendFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                findMany: {
+                    args: Prisma.EmailSendFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>[];
+                };
+                create: {
+                    args: Prisma.EmailSendCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                createMany: {
+                    args: Prisma.EmailSendCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.EmailSendDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                update: {
+                    args: Prisma.EmailSendUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.EmailSendDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.EmailSendUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.EmailSendUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailSendPayload>;
+                };
+                aggregate: {
+                    args: Prisma.EmailSendAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateEmailSend>;
+                };
+                groupBy: {
+                    args: Prisma.EmailSendGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.EmailSendGroupByOutputType>[];
+                };
+                findRaw: {
+                    args: Prisma.EmailSendFindRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                aggregateRaw: {
+                    args: Prisma.EmailSendAggregateRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                count: {
+                    args: Prisma.EmailSendCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.EmailSendCountAggregateOutputType> | number;
+                };
+            };
+        };
     };
 } & {
     other: {
@@ -609,8 +759,40 @@ export declare const SubGroupScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
     readonly groupId: "groupId";
+    readonly brevoListId: "brevoListId";
 };
 export type SubGroupScalarFieldEnum = (typeof SubGroupScalarFieldEnum)[keyof typeof SubGroupScalarFieldEnum];
+export declare const ContactScalarFieldEnum: {
+    readonly id: "id";
+    readonly firstName: "firstName";
+    readonly lastName: "lastName";
+    readonly function: "function";
+    readonly status: "status";
+    readonly email: "email";
+    readonly phoneNumber: "phoneNumber";
+    readonly lastContact: "lastContact";
+    readonly lastEmail: "lastEmail";
+    readonly groupId: "groupId";
+    readonly subGroupId: "subGroupId";
+};
+export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum];
+export declare const EmailSendScalarFieldEnum: {
+    readonly id: "id";
+    readonly contactId: "contactId";
+    readonly email: "email";
+    readonly brevoCampaignId: "brevoCampaignId";
+    readonly subject: "subject";
+    readonly status: "status";
+    readonly sentAt: "sentAt";
+    readonly deliveredAt: "deliveredAt";
+    readonly openedAt: "openedAt";
+    readonly clickedAt: "clickedAt";
+    readonly bouncedAt: "bouncedAt";
+    readonly unsubscribedAt: "unsubscribedAt";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
@@ -628,6 +810,8 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>;
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>;
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>;
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>;
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>;
 export type BatchPayload = {
     count: number;
 };
@@ -658,6 +842,8 @@ export type GlobalOmitConfig = {
     role?: Prisma.RoleOmit;
     group?: Prisma.GroupOmit;
     subGroup?: Prisma.SubGroupOmit;
+    contact?: Prisma.ContactOmit;
+    emailSend?: Prisma.EmailSendOmit;
 };
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 export type LogDefinition = {

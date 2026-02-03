@@ -17,6 +17,8 @@ const permissionGroup_module_1 = require("./permissionGroup/permissionGroup.modu
 const role_modules_1 = require("./role/role.modules");
 const groups_module_1 = require("./groups/groups.module");
 const subgroups_module_1 = require("./subgroups/subgroups.module");
+const contacts_module_1 = require("./contacts/contacts.module");
+const email_module_1 = require("./email/email.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,6 +34,8 @@ exports.AppModule = AppModule = __decorate([
             role_modules_1.RoleModule,
             groups_module_1.GroupsModule,
             subgroups_module_1.SubGroupsModule,
+            contacts_module_1.ContactsModule,
+            email_module_1.EmailModule,
         ],
     })
 ], AppModule);

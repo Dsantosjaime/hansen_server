@@ -77,3 +77,13 @@ export type Group = Prisma.GroupModel
  * 
  */
 export type SubGroup = Prisma.SubGroupModel
+/**
+ * Model Contact
+ * 
+ */
+export type Contact = Prisma.ContactModel
+/**
+ * Model EmailSend
+ * 
+ */
+export type EmailSend = Prisma.EmailSendModel

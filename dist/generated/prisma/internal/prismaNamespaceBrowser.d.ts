@@ -31,6 +31,8 @@ export declare const ModelName: {
     readonly Role: "Role";
     readonly Group: "Group";
     readonly SubGroup: "SubGroup";
+    readonly Contact: "Contact";
+    readonly EmailSend: "EmailSend";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const UserScalarFieldEnum: {
@@ -63,8 +65,40 @@ export declare const SubGroupScalarFieldEnum: {
     readonly id: "id";
     readonly name: "name";
     readonly groupId: "groupId";
+    readonly brevoListId: "brevoListId";
 };
 export type SubGroupScalarFieldEnum = (typeof SubGroupScalarFieldEnum)[keyof typeof SubGroupScalarFieldEnum];
+export declare const ContactScalarFieldEnum: {
+    readonly id: "id";
+    readonly firstName: "firstName";
+    readonly lastName: "lastName";
+    readonly function: "function";
+    readonly status: "status";
+    readonly email: "email";
+    readonly phoneNumber: "phoneNumber";
+    readonly lastContact: "lastContact";
+    readonly lastEmail: "lastEmail";
+    readonly groupId: "groupId";
+    readonly subGroupId: "subGroupId";
+};
+export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum];
+export declare const EmailSendScalarFieldEnum: {
+    readonly id: "id";
+    readonly contactId: "contactId";
+    readonly email: "email";
+    readonly brevoCampaignId: "brevoCampaignId";
+    readonly subject: "subject";
+    readonly status: "status";
+    readonly sentAt: "sentAt";
+    readonly deliveredAt: "deliveredAt";
+    readonly openedAt: "openedAt";
+    readonly clickedAt: "clickedAt";
+    readonly bouncedAt: "bouncedAt";
+    readonly unsubscribedAt: "unsubscribedAt";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";

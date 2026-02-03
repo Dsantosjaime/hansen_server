@@ -53,7 +53,9 @@ export const ModelName = {
   PermissionGroup: 'PermissionGroup',
   Role: 'Role',
   Group: 'Group',
-  SubGroup: 'SubGroup'
+  SubGroup: 'SubGroup',
+  Contact: 'Contact',
+  EmailSend: 'EmailSend'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -103,10 +105,48 @@ export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof Gr
 export const SubGroupScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  groupId: 'groupId'
+  groupId: 'groupId',
+  brevoListId: 'brevoListId'
 } as const
 
 export type SubGroupScalarFieldEnum = (typeof SubGroupScalarFieldEnum)[keyof typeof SubGroupScalarFieldEnum]
+
+
+export const ContactScalarFieldEnum = {
+  id: 'id',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  function: 'function',
+  status: 'status',
+  email: 'email',
+  phoneNumber: 'phoneNumber',
+  lastContact: 'lastContact',
+  lastEmail: 'lastEmail',
+  groupId: 'groupId',
+  subGroupId: 'subGroupId'
+} as const
+
+export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
+
+
+export const EmailSendScalarFieldEnum = {
+  id: 'id',
+  contactId: 'contactId',
+  email: 'email',
+  brevoCampaignId: 'brevoCampaignId',
+  subject: 'subject',
+  status: 'status',
+  sentAt: 'sentAt',
+  deliveredAt: 'deliveredAt',
+  openedAt: 'openedAt',
+  clickedAt: 'clickedAt',
+  bouncedAt: 'bouncedAt',
+  unsubscribedAt: 'unsubscribedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -37,5 +37,11 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
     get subGroup(): Prisma.SubGroupDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
+    get contact(): Prisma.ContactDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    get emailSend(): Prisma.EmailSendDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
 }
 export declare function getPrismaClientClass(dirname: string): PrismaClientConstructor;
