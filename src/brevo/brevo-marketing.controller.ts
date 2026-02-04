@@ -24,7 +24,7 @@ export class BrevoMarketingController {
     summary:
       "Lister les templates Brevo (id + name + subject) pour créer des campagnes",
   })
-  @CheckAbilities({ action: "read", subject: "Brevo" })
+  @CheckAbilities({ action: "read", subject: "Email" })
   listTemplates() {
     return this.brevo.listTemplateCampaigns();
   }
@@ -33,7 +33,7 @@ export class BrevoMarketingController {
   @ApiOperation({
     summary: "Créer une campagne depuis un templateId + envoyer maintenant",
   })
-  @CheckAbilities({ action: "create", subject: "Brevo" })
+  @CheckAbilities({ action: "create", subject: "Email" })
   sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
     return this.brevo.sendCampaignFromTemplate(dto);
   }
@@ -41,7 +41,7 @@ export class BrevoMarketingController {
   @Post("sub-groups/:id/ensure-list")
   @ApiOperation({ summary: "Crée la liste Brevo du sous-groupe si absente" })
   @ApiParam({ name: "id", type: String })
-  @CheckAbilities({ action: "update", subject: "Brevo" })
+  @CheckAbilities({ action: "update", subject: "Subgroup" })
   ensureList(@Param("id") subGroupId: string) {
     return this.brevo.ensureBrevoListForSubGroup(subGroupId);
   }
@@ -49,7 +49,7 @@ export class BrevoMarketingController {
   @Post("sub-groups/:id/resync")
   @ApiOperation({ summary: "Resync complet d’un sous-groupe (utilitaire)" })
   @ApiParam({ name: "id", type: String })
-  @CheckAbilities({ action: "update", subject: "Brevo" })
+  @CheckAbilities({ action: "update", subject: "Subgroup" })
   resyncSubGroup(@Param("id") subGroupId: string) {
     return this.brevo.resyncSubGroup(subGroupId);
   }
@@ -58,7 +58,7 @@ export class BrevoMarketingController {
   @ApiOperation({
     summary: "Resync complet de tous les sous-groupes (utilitaire)",
   })
-  @CheckAbilities({ action: "update", subject: "Brevo" })
+  @CheckAbilities({ action: "update", subject: "Subgroup" })
   resyncAll() {
     return this.brevo.resyncAllSubGroups();
   }
@@ -69,7 +69,7 @@ export class BrevoMarketingController {
       "Ajout massif (upsert) de contacts dans la liste Brevo du sous-groupe",
   })
   @ApiParam({ name: "id", type: String })
-  @CheckAbilities({ action: "update", subject: "Brevo" })
+  @CheckAbilities({ action: "create", subject: "Contact" })
   async bulkSyncToSubGroupList(
     @Param("id") subGroupId: string,
     @Body() dto: BulkSyncContactsDto,

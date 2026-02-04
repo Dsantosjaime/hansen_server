@@ -7,4 +7,5 @@ export type * from './models/Group';
 export type * from './models/SubGroup';
 export type * from './models/Contact';
 export type * from './models/EmailSend';
+export type * from './models/CampaignAttachment';
 export type * from './commonInputTypes';

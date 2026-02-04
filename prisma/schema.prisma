@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -109,4 +110,15 @@ model EmailSend {
   @@index([email])
   @@index([brevoCampaignId])
   @@unique([brevoCampaignId, email])
+}
+
+model CampaignAttachment {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  token      String   @unique
+  filename   String
+  mimeType   String
+  size       Int
+  path       String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
 }

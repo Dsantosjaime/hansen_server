@@ -29,23 +29,26 @@ let CaslGuard = class CaslGuard {
             context.getHandler(),
             context.getClass(),
         ]) ?? [];
+        console.log("CASL Guard");
         const req = context.switchToHttp().getRequest();
         const kcUser = req.user;
         if (!kcUser?.sub)
-            throw new common_1.ForbiddenException('Missing user');
+            throw new common_1.ForbiddenException("Missing user");
+        console.log("CASL Guard");
         const dbUser = await this.usersService.updateFromKeycloak(kcUser);
+        console.log("CASL Guard", dbUser);
         if (!dbUser?.role?.permissions) {
             throw new common_1.NotFoundException(`User with keycloakId=${kcUser?.sub} don't have any permission`);
         }
         const realmRoles = kcUser.realm_access?.roles ?? [];
-        const isSuperAdmin = realmRoles.includes('super_admin');
+        const isSuperAdmin = realmRoles.includes("super_admin");
         const ability = this.caslAbilityFactory.createFor({
             isSuperAdmin,
             permissions: dbUser?.role?.permissions,
         });
         for (const r of required) {
             if (!ability.can(r.action, r.subject)) {
-                throw new common_1.ForbiddenException('Forbidden by CASL');
+                throw new common_1.ForbiddenException("Forbidden by CASL");
             }
         }
         req.dbUser = dbUser;

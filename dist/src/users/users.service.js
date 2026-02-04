@@ -27,6 +27,7 @@ let UsersService = class UsersService {
             .catch(() => undefined);
     }
     async getUsers() {
+        console.log("test getuser");
         return this.prisma.user.findMany({
             include: { role: true },
         });
@@ -95,6 +96,8 @@ let UsersService = class UsersService {
     }
     async updateFromKeycloak(payload) {
         try {
+            const users = await this.getUsers();
+            console.log("payload", users);
             return await this.prisma.user.update({
                 where: { keycloakId: payload.sub },
                 data: {
@@ -105,6 +108,7 @@ let UsersService = class UsersService {
             });
         }
         catch (err) {
+            console.log(err);
             if (err instanceof prismaNamespace_1.PrismaClientKnownRequestError) {
                 throw new common_1.NotFoundException(`User with keycloakId=${payload.sub} not found (must be created via API before syncing from Keycloak).`);
             }

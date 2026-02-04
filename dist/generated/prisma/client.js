@@ -47,4 +47,6 @@ __exportStar(require("./enums"), exports);
 exports.PrismaClient = $Class.getPrismaClientClass(__dirname);
 path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");
 path.join(process.cwd(), "generated/prisma/libquery_engine-darwin-arm64.dylib.node");
+path.join(__dirname, "libquery_engine-linux-musl-arm64-openssl-3.0.x.so.node");
+path.join(process.cwd(), "generated/prisma/libquery_engine-linux-musl-arm64-openssl-3.0.x.so.node");
 //# sourceMappingURL=client.js.map

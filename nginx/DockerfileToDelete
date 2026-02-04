@@ -1,0 +1,20 @@
+# ---- build expo web ----
+    FROM node:20-alpine AS webbuilder
+    WORKDIR /hansen_server
+    
+    COPY frontend/package*.json ./
+    RUN npm ci
+    
+    COPY hansen_server/ ./
+    
+    # Build Expo web (génère un dossier dist/)
+    RUN npx expo export -p web
+    
+    # ---- nginx edge ----
+    FROM nginx:alpine AS edge
+    
+    # Static app
+    COPY --from=webbuilder /frontend/dist/ /usr/share/nginx/html/
+    
+    # Nginx config
+    COPY nginx/nginx.prod.conf /etc/nginx/conf.d/default.conf

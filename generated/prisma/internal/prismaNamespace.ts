@@ -396,7 +396,8 @@ export const ModelName = {
   Group: 'Group',
   SubGroup: 'SubGroup',
   Contact: 'Contact',
-  EmailSend: 'EmailSend'
+  EmailSend: 'EmailSend',
+  CampaignAttachment: 'CampaignAttachment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -412,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend"
+    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment"
     txIsolationLevel: never
   }
   model: {
@@ -934,6 +935,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CampaignAttachment: {
+      payload: Prisma.$CampaignAttachmentPayload<ExtArgs>
+      fields: Prisma.CampaignAttachmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CampaignAttachmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CampaignAttachmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        findFirst: {
+          args: Prisma.CampaignAttachmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CampaignAttachmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        findMany: {
+          args: Prisma.CampaignAttachmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>[]
+        }
+        create: {
+          args: Prisma.CampaignAttachmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        createMany: {
+          args: Prisma.CampaignAttachmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.CampaignAttachmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        update: {
+          args: Prisma.CampaignAttachmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.CampaignAttachmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CampaignAttachmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.CampaignAttachmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>
+        }
+        aggregate: {
+          args: Prisma.CampaignAttachmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCampaignAttachment>
+        }
+        groupBy: {
+          args: Prisma.CampaignAttachmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CampaignAttachmentGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.CampaignAttachmentFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.CampaignAttachmentAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.CampaignAttachmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CampaignAttachmentCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1034,6 +1109,20 @@ export const EmailSendScalarFieldEnum = {
 } as const
 
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum]
+
+
+export const CampaignAttachmentScalarFieldEnum = {
+  id: 'id',
+  token: 'token',
+  filename: 'filename',
+  mimeType: 'mimeType',
+  size: 'size',
+  path: 'path',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1213,6 +1302,7 @@ export type GlobalOmitConfig = {
   subGroup?: Prisma.SubGroupOmit
   contact?: Prisma.ContactOmit
   emailSend?: Prisma.EmailSendOmit
+  campaignAttachment?: Prisma.CampaignAttachmentOmit
 }
 
 /* Types for Logging */

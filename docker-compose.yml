@@ -1,46 +1,122 @@
 services:
   mongo:
     image: mongo:7
-    container_name: mongo-local
-    ports:
-      - '27017:27017'
-    command: ['mongod', '--replSet', 'rs0', '--bind_ip_all']
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mongo-init:
+    image: mongo:7
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "on-failure"
+    command: >
+      sh -lc '
+      until mongosh --host mongo:27017 --quiet --eval "db.adminCommand({ ping: 1 }).ok" | grep 1; do sleep 2; done;
+      mongosh --host mongo:27017 --eval "
+        try { rs.status().ok } catch (e) {
+          rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongo:27017\"}]})
+        }
+      ";
+      until mongosh --host mongo:27017 --quiet --eval "db.hello().isWritablePrimary" | grep true; do sleep 2; done;
+      '
 
   keycloak-db:
     image: postgres:16
-    container_name: keycloak-db
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak_password
-    ports:
-      - '5432:5432'
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
     volumes:
       - keycloak_pg_data:/var/lib/postgresql/data
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.6
-    container_name: keycloak
     depends_on:
       - keycloak-db
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
 
       KC_DB: postgres
       KC_DB_URL_HOST: keycloak-db
       KC_DB_URL_DATABASE: keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak_password
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
 
-      # local
-      KC_HTTP_ENABLED: 'true'
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HOSTNAME: auth.${DOMAIN}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "true"
+    command: ["start"]
+
+  prisma-push:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["sh", "-lc", "npx prisma db push --skip-generate"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+      prisma-push:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      UPLOAD_DIR: /data/campaign-attachments
+      PUBLIC_FILES_BASE_URL: ${PUBLIC_FILES_BASE_URL}
+      ATTACHMENT_TTL_HOURS: 168
+
+      KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+    volumes:
+      - attachments_data:/data/campaign-attachments
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: deploy/nginx/Dockerfile.prod
+      args:
+        EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL}
+        EXPO_PUBLIC_AUTH_BASE_URL: ${EXPO_PUBLIC_AUTH_BASE_URL}
+        EXPO_PUBLIC_FILES_BASE_URL: ${EXPO_PUBLIC_FILES_BASE_URL}
+        EXPO_PUBLIC_DOMAIN: ${EXPO_PUBLIC_DOMAIN}
+    depends_on:
+      - api
+      - keycloak
+    environment:
+      DOMAIN: ${DOMAIN}
     ports:
-      - '8080:8080'
-    command: ['start-dev']
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+      - attachments_data:/data/campaign-attachments:ro
 
 volumes:
   mongo_data:
   keycloak_pg_data:
+  attachments_data:

@@ -4,15 +4,15 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import {
   CHECK_ABILITIES_KEY,
   RequiredAbility,
-} from './check-abilities.decorator';
-import { CaslAbilityFactory } from './casl-ability.factory';
-import { UsersService } from 'src/users/users.service';
-import type { RequestWithAuth } from 'src/auth/request-with-user.type';
+} from "./check-abilities.decorator";
+import { CaslAbilityFactory } from "./casl-ability.factory";
+import { UsersService } from "src/users/users.service";
+import type { RequestWithAuth } from "src/auth/request-with-user.type";
 
 @Injectable()
 export class CaslGuard implements CanActivate {
@@ -29,12 +29,17 @@ export class CaslGuard implements CanActivate {
         context.getClass(),
       ]) ?? [];
 
+    console.log("CASL Guard");
+
     const req = context.switchToHttp().getRequest<RequestWithAuth>();
     const kcUser = req.user;
 
-    if (!kcUser?.sub) throw new ForbiddenException('Missing user');
+    if (!kcUser?.sub) throw new ForbiddenException("Missing user");
 
+    console.log("CASL Guard");
     const dbUser = await this.usersService.updateFromKeycloak(kcUser);
+    console.log("CASL Guard", dbUser);
+
     if (!dbUser?.role?.permissions) {
       throw new NotFoundException(
         `User with keycloakId=${kcUser?.sub} don't have any permission`,
@@ -42,7 +47,7 @@ export class CaslGuard implements CanActivate {
     }
 
     const realmRoles = kcUser.realm_access?.roles ?? [];
-    const isSuperAdmin = realmRoles.includes('super_admin');
+    const isSuperAdmin = realmRoles.includes("super_admin");
 
     const ability = this.caslAbilityFactory.createFor({
       isSuperAdmin,
@@ -52,7 +57,7 @@ export class CaslGuard implements CanActivate {
 
     for (const r of required) {
       if (!ability.can(r.action as any, r.subject as any)) {
-        throw new ForbiddenException('Forbidden by CASL');
+        throw new ForbiddenException("Forbidden by CASL");
       }
     }
     req.dbUser = dbUser;

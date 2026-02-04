@@ -62,3 +62,8 @@ export type Contact = Prisma.ContactModel
  * 
  */
 export type EmailSend = Prisma.EmailSendModel
+/**
+ * Model CampaignAttachment
+ * 
+ */
+export type CampaignAttachment = Prisma.CampaignAttachmentModel

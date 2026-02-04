@@ -183,6 +183,7 @@ export declare const ModelName: {
     readonly SubGroup: "SubGroup";
     readonly Contact: "Contact";
     readonly EmailSend: "EmailSend";
+    readonly CampaignAttachment: "CampaignAttachment";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export interface TypeMapCb<GlobalOmitOptions = {}> extends runtime.Types.Utils.Fn<{
@@ -195,7 +196,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend";
+        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment";
         txIsolationLevel: never;
     };
     model: {
@@ -717,6 +718,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        CampaignAttachment: {
+            payload: Prisma.$CampaignAttachmentPayload<ExtArgs>;
+            fields: Prisma.CampaignAttachmentFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.CampaignAttachmentFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.CampaignAttachmentFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                findFirst: {
+                    args: Prisma.CampaignAttachmentFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.CampaignAttachmentFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                findMany: {
+                    args: Prisma.CampaignAttachmentFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>[];
+                };
+                create: {
+                    args: Prisma.CampaignAttachmentCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                createMany: {
+                    args: Prisma.CampaignAttachmentCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.CampaignAttachmentDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                update: {
+                    args: Prisma.CampaignAttachmentUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.CampaignAttachmentDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.CampaignAttachmentUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.CampaignAttachmentUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$CampaignAttachmentPayload>;
+                };
+                aggregate: {
+                    args: Prisma.CampaignAttachmentAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateCampaignAttachment>;
+                };
+                groupBy: {
+                    args: Prisma.CampaignAttachmentGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.CampaignAttachmentGroupByOutputType>[];
+                };
+                findRaw: {
+                    args: Prisma.CampaignAttachmentFindRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                aggregateRaw: {
+                    args: Prisma.CampaignAttachmentAggregateRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                count: {
+                    args: Prisma.CampaignAttachmentCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.CampaignAttachmentCountAggregateOutputType> | number;
+                };
+            };
+        };
     };
 } & {
     other: {
@@ -793,6 +868,17 @@ export declare const EmailSendScalarFieldEnum: {
     readonly updatedAt: "updatedAt";
 };
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum];
+export declare const CampaignAttachmentScalarFieldEnum: {
+    readonly id: "id";
+    readonly token: "token";
+    readonly filename: "filename";
+    readonly mimeType: "mimeType";
+    readonly size: "size";
+    readonly path: "path";
+    readonly createdAt: "createdAt";
+    readonly expiresAt: "expiresAt";
+};
+export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
@@ -844,6 +930,7 @@ export type GlobalOmitConfig = {
     subGroup?: Prisma.SubGroupOmit;
     contact?: Prisma.ContactOmit;
     emailSend?: Prisma.EmailSendOmit;
+    campaignAttachment?: Prisma.CampaignAttachmentOmit;
 };
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 export type LogDefinition = {

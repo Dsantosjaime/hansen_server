@@ -1,7 +1,7 @@
-import { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { CaslAbilityFactory } from './casl-ability.factory';
-import { UsersService } from 'src/users/users.service';
+import { CanActivate, ExecutionContext } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { CaslAbilityFactory } from "./casl-ability.factory";
+import { UsersService } from "src/users/users.service";
 export declare class CaslGuard implements CanActivate {
     private reflector;
     private caslAbilityFactory;

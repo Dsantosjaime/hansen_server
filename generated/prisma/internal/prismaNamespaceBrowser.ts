@@ -55,7 +55,8 @@ export const ModelName = {
   Group: 'Group',
   SubGroup: 'SubGroup',
   Contact: 'Contact',
-  EmailSend: 'EmailSend'
+  EmailSend: 'EmailSend',
+  CampaignAttachment: 'CampaignAttachment'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -147,6 +148,20 @@ export const EmailSendScalarFieldEnum = {
 } as const
 
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum]
+
+
+export const CampaignAttachmentScalarFieldEnum = {
+  id: 'id',
+  token: 'token',
+  filename: 'filename',
+  mimeType: 'mimeType',
+  size: 'size',
+  path: 'path',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+} as const
+
+export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum]
 
 
 export const SortOrder = {

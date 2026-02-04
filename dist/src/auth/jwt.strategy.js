@@ -52,13 +52,13 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     constructor(config) {
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
-            issuer: config.get('KEYCLOAK_ISSUER'),
-            algorithms: ['RS256'],
+            issuer: config.get("KEYCLOAK_ISSUER"),
+            algorithms: ["RS256"],
             secretOrKeyProvider: jwksRsa.passportJwtSecret({
                 cache: true,
                 rateLimit: true,
                 jwksRequestsPerMinute: 10,
-                jwksUri: config.get('KEYCLOAK_JWKS_URI'),
+                jwksUri: config.get("KEYCLOAK_JWKS_URI"),
             }),
         });
     }

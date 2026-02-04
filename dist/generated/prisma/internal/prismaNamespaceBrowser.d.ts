@@ -33,6 +33,7 @@ export declare const ModelName: {
     readonly SubGroup: "SubGroup";
     readonly Contact: "Contact";
     readonly EmailSend: "EmailSend";
+    readonly CampaignAttachment: "CampaignAttachment";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const UserScalarFieldEnum: {
@@ -99,6 +100,17 @@ export declare const EmailSendScalarFieldEnum: {
     readonly updatedAt: "updatedAt";
 };
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum];
+export declare const CampaignAttachmentScalarFieldEnum: {
+    readonly id: "id";
+    readonly token: "token";
+    readonly filename: "filename";
+    readonly mimeType: "mimeType";
+    readonly size: "size";
+    readonly path: "path";
+    readonly createdAt: "createdAt";
+    readonly expiresAt: "expiresAt";
+};
+export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";

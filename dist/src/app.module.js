@@ -19,6 +19,8 @@ const groups_module_1 = require("./groups/groups.module");
 const subgroups_module_1 = require("./subgroups/subgroups.module");
 const contacts_module_1 = require("./contacts/contacts.module");
 const email_module_1 = require("./email/email.module");
+const campaign_attachments_module_1 = require("./campaign-attachments/campaign-attachments.module");
+const serve_static_1 = require("@nestjs/serve-static");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -36,6 +38,20 @@ exports.AppModule = AppModule = __decorate([
             subgroups_module_1.SubGroupsModule,
             contacts_module_1.ContactsModule,
             email_module_1.EmailModule,
+            campaign_attachments_module_1.CampaignAttachmentsModule,
+            serve_static_1.ServeStaticModule.forRootAsync({
+                inject: [config_1.ConfigService],
+                useFactory: (config) => {
+                    const uploadDir = config.getOrThrow("UPLOAD_DIR");
+                    return [
+                        {
+                            rootPath: uploadDir,
+                            serveRoot: "/campaign-attachments",
+                            serveStaticOptions: { index: false, fallthrough: false },
+                        },
+                    ];
+                },
+            }),
         ],
     })
 ], AppModule);

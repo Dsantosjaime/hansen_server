@@ -62,7 +62,7 @@ export class EmailService {
     const data = [...map.values()].map((r) => ({
       contactId: r.contactId,
       email: r.email,
-      brevoCampaignId: args.brevoCampaignId,
+      brevoCampaignId: String(args.brevoCampaignId),
       subject: args.subject,
       status,
     }));
@@ -127,12 +127,12 @@ export class EmailService {
 
       await this.prisma.emailSend.upsert({
         where: {
-          brevoCampaignId_email: { brevoCampaignId: campaignId, email },
+          brevoCampaignId_email: { brevoCampaignId: String(campaignId), email },
         },
         create: {
           email,
           contactId: contactId ?? null,
-          brevoCampaignId: campaignId,
+          brevoCampaignId: String(campaignId),
           subject: "(unknown)", // sera rempli lors du send, sinon inconnu
           status: eventType,
           ...dataToUpdate,
