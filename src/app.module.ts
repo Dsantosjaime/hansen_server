@@ -15,6 +15,8 @@ import {
   ServeStaticModule,
   type ServeStaticModuleOptions,
 } from "@nestjs/serve-static";
+import { TodoModule } from "./todo/todo.module";
+import { PluginParamsModule } from "./plugin-params/plugin-params.module";
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import {
         ];
       },
     }),
+    TodoModule,
+    PluginParamsModule,
   ],
 })
 export class AppModule {}

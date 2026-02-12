@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryMode = exports.SortOrder = exports.CampaignAttachmentScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.QueryMode = exports.SortOrder = exports.ToDoScalarFieldEnum = exports.CampaignAttachmentScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -52,7 +52,8 @@ exports.ModelName = {
     SubGroup: 'SubGroup',
     Contact: 'Contact',
     EmailSend: 'EmailSend',
-    CampaignAttachment: 'CampaignAttachment'
+    CampaignAttachment: 'CampaignAttachment',
+    ToDo: 'ToDo'
 };
 exports.UserScalarFieldEnum = {
     id: 'id',
@@ -120,6 +121,16 @@ exports.CampaignAttachmentScalarFieldEnum = {
     path: 'path',
     createdAt: 'createdAt',
     expiresAt: 'expiresAt'
+};
+exports.ToDoScalarFieldEnum = {
+    id: 'id',
+    contactId: 'contactId',
+    type: 'type',
+    title: 'title',
+    toDoAt: 'toDoAt',
+    done: 'done',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 };
 exports.SortOrder = {
     asc: 'asc',

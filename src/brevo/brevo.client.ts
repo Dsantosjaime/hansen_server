@@ -5,6 +5,16 @@ export type BrevoEmailTemplate = {
   isActive: boolean;
 };
 
+export type BrevoEmailCampaign = {
+  id: number;
+  name: string;
+  subject: string;
+  status: string;
+  scheduledAt?: string | null;
+  createdAt?: string | null;
+  modifiedAt?: string | null;
+};
+
 export type BrevoCreateCampaignFromTemplateInput = {
   name: string;
   sender: { name: string; email: string };
@@ -46,4 +56,11 @@ export interface BrevoClient {
   }): Promise<void>;
 
   deleteContactByEmail(email: string): Promise<void>;
+
+  listEmailCampaigns(args: {
+    limit: number;
+    offset: number;
+    sort?: "asc" | "desc";
+    type?: "classic" | "trigger";
+  }): Promise<BrevoEmailCampaign[]>;
 }

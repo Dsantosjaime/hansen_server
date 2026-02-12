@@ -96,3 +96,13 @@ export type EmailSend = Prisma.EmailSendModel
  * 
  */
 export type CampaignAttachment = Prisma.CampaignAttachmentModel
+/**
+ * Model ToDo
+ * 
+ */
+export type ToDo = Prisma.ToDoModel
+/**
+ * Model PluginParam
+ * 
+ */
+export type PluginParam = Prisma.PluginParamModel

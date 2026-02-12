@@ -29,16 +29,12 @@ export class CaslGuard implements CanActivate {
         context.getClass(),
       ]) ?? [];
 
-    console.log("CASL Guard");
-
     const req = context.switchToHttp().getRequest<RequestWithAuth>();
     const kcUser = req.user;
 
     if (!kcUser?.sub) throw new ForbiddenException("Missing user");
 
-    console.log("CASL Guard");
     const dbUser = await this.usersService.updateFromKeycloak(kcUser);
-    console.log("CASL Guard", dbUser);
 
     if (!dbUser?.role?.permissions) {
       throw new NotFoundException(

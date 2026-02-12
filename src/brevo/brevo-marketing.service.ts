@@ -15,6 +15,7 @@ import { BrevoTemplateDto } from "./dto/brevo-template.dto";
 import { BREVO_CLIENT } from "./brevo.constants";
 import type { BrevoClient } from "./brevo.client";
 import { EmailService } from "src/email/email.service";
+import { BrevoCampaignDto } from "./dto/brevo-campaign.dto";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -306,5 +307,30 @@ export class BrevoMarketingService {
       where: { subGroupId: { in: ids } },
       select: { id: true, email: true, firstName: true, lastName: true },
     });
+  }
+
+  async listMarketingCampaigns(input?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<BrevoCampaignDto[]> {
+    const limit = Number(input?.limit ?? 50);
+    const offset = Number(input?.offset ?? 0);
+
+    const campaigns = await this.brevo.listEmailCampaigns({
+      limit,
+      offset,
+      sort: "desc",
+      type: "classic",
+    });
+
+    return campaigns.map((c) => ({
+      id: c.id,
+      name: c.name,
+      subject: c.subject,
+      status: c.status,
+      scheduledAt: c.scheduledAt ?? null,
+      createdAt: c.createdAt ?? null,
+      modifiedAt: c.modifiedAt ?? null,
+    }));
   }
 }

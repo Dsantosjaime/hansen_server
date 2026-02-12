@@ -203,6 +203,40 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedIntFilter<$PrismaModel>
 }
 
+export type EnumToDoTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel> | $Enums.ToDoType
+}
+
+export type EnumToDoTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel> | $Enums.ToDoType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>
+}
+
+export type EnumPluginRestrictedParamTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.PluginRestrictedParamType | Prisma.EnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel> | $Enums.PluginRestrictedParamType
+}
+
+export type EnumPluginRestrictedParamTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PluginRestrictedParamType | Prisma.EnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPluginRestrictedParamTypeWithAggregatesFilter<$PrismaModel> | $Enums.PluginRestrictedParamType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -409,6 +443,40 @@ export type NestedFloatFilter<$PrismaModel = never> = {
   gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
+export type NestedEnumToDoTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel> | $Enums.ToDoType
+}
+
+export type NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel> | $Enums.ToDoType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.PluginRestrictedParamType | Prisma.EnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel> | $Enums.PluginRestrictedParamType
+}
+
+export type NestedEnumPluginRestrictedParamTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PluginRestrictedParamType | Prisma.EnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PluginRestrictedParamType[] | Prisma.ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPluginRestrictedParamTypeWithAggregatesFilter<$PrismaModel> | $Enums.PluginRestrictedParamType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPluginRestrictedParamTypeFilter<$PrismaModel>
 }
 
 

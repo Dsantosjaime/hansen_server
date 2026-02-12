@@ -34,6 +34,7 @@ export declare const ModelName: {
     readonly Contact: "Contact";
     readonly EmailSend: "EmailSend";
     readonly CampaignAttachment: "CampaignAttachment";
+    readonly ToDo: "ToDo";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const UserScalarFieldEnum: {
@@ -111,6 +112,17 @@ export declare const CampaignAttachmentScalarFieldEnum: {
     readonly expiresAt: "expiresAt";
 };
 export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum];
+export declare const ToDoScalarFieldEnum: {
+    readonly id: "id";
+    readonly contactId: "contactId";
+    readonly type: "type";
+    readonly title: "title";
+    readonly toDoAt: "toDoAt";
+    readonly done: "done";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type ToDoScalarFieldEnum = (typeof ToDoScalarFieldEnum)[keyof typeof ToDoScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";

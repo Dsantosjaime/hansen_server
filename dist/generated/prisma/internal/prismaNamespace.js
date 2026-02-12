@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defineExtension = exports.QueryMode = exports.SortOrder = exports.CampaignAttachmentScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
+exports.defineExtension = exports.QueryMode = exports.SortOrder = exports.ToDoScalarFieldEnum = exports.CampaignAttachmentScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.prismaVersion = exports.getExtensionContext = exports.Decimal = exports.Sql = exports.raw = exports.join = exports.empty = exports.sql = exports.PrismaClientValidationError = exports.PrismaClientInitializationError = exports.PrismaClientRustPanicError = exports.PrismaClientUnknownRequestError = exports.PrismaClientKnownRequestError = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/library"));
 exports.PrismaClientKnownRequestError = runtime.PrismaClientKnownRequestError;
 exports.PrismaClientUnknownRequestError = runtime.PrismaClientUnknownRequestError;
@@ -67,7 +67,8 @@ exports.ModelName = {
     SubGroup: 'SubGroup',
     Contact: 'Contact',
     EmailSend: 'EmailSend',
-    CampaignAttachment: 'CampaignAttachment'
+    CampaignAttachment: 'CampaignAttachment',
+    ToDo: 'ToDo'
 };
 exports.UserScalarFieldEnum = {
     id: 'id',
@@ -135,6 +136,16 @@ exports.CampaignAttachmentScalarFieldEnum = {
     path: 'path',
     createdAt: 'createdAt',
     expiresAt: 'expiresAt'
+};
+exports.ToDoScalarFieldEnum = {
+    id: 'id',
+    contactId: 'contactId',
+    type: 'type',
+    title: 'title',
+    toDoAt: 'toDoAt',
+    done: 'done',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
 };
 exports.SortOrder = {
     asc: 'asc',

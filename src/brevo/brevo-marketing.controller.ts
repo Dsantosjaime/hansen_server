@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
@@ -77,5 +86,20 @@ export class BrevoMarketingController {
     const listId = await this.brevo.ensureBrevoListForSubGroup(subGroupId);
     const payload = dto.emails.map((email) => ({ email, attributes: {} }));
     return this.brevo.bulkUpsertContactsToList(listId, payload);
+  }
+
+  @Get("campaigns")
+  @ApiOperation({ summary: "Lister les campagnes marketing Brevo créées" })
+  @ApiQuery({ name: "limit", required: false, type: Number })
+  @ApiQuery({ name: "offset", required: false, type: Number })
+  @CheckAbilities({ action: "read", subject: "Email" })
+  listCampaigns(
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
+  ) {
+    return this.brevo.listMarketingCampaigns({
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+    });
   }
 }

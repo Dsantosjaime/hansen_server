@@ -30,7 +30,6 @@ export class UsersService {
   }
 
   async getUsers(): Promise<UserWithRole[]> {
-    console.log("test getuser");
     return this.prisma.user.findMany({
       include: { role: true },
     });
@@ -126,8 +125,6 @@ export class UsersService {
 
   async updateFromKeycloak(payload: KeycloakJwtPayload): Promise<UserWithRole> {
     try {
-      const users = await this.getUsers();
-      console.log("payload", users);
       return await this.prisma.user.update({
         where: { keycloakId: payload.sub },
         data: {
@@ -137,7 +134,6 @@ export class UsersService {
         include: { role: true },
       });
     } catch (err) {
-      console.log(err);
       if (err instanceof PrismaClientKnownRequestError) {
         throw new NotFoundException(
           `User with keycloakId=${payload.sub} not found (must be created via API before syncing from Keycloak).`,

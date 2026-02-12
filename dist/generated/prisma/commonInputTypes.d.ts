@@ -1,3 +1,4 @@
+import * as $Enums from "./enums";
 import type * as Prisma from "./internal/prismaNamespace";
 export type StringFilter<$PrismaModel = never> = {
     equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
@@ -173,6 +174,21 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
     _sum?: Prisma.NestedIntFilter<$PrismaModel>;
     _min?: Prisma.NestedIntFilter<$PrismaModel>;
     _max?: Prisma.NestedIntFilter<$PrismaModel>;
+};
+export type EnumToDoTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel> | $Enums.ToDoType;
+};
+export type EnumToDoTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel> | $Enums.ToDoType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>;
 };
 export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | Prisma.StringFieldRefInput<$PrismaModel>;
@@ -365,4 +381,19 @@ export type NestedFloatFilter<$PrismaModel = never> = {
     gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>;
     gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>;
     not?: Prisma.NestedFloatFilter<$PrismaModel> | number;
+};
+export type NestedEnumToDoTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel> | $Enums.ToDoType;
+};
+export type NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ToDoType | Prisma.EnumToDoTypeFieldRefInput<$PrismaModel>;
+    in?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    notIn?: $Enums.ToDoType[] | Prisma.ListEnumToDoTypeFieldRefInput<$PrismaModel>;
+    not?: Prisma.NestedEnumToDoTypeWithAggregatesFilter<$PrismaModel> | $Enums.ToDoType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumToDoTypeFilter<$PrismaModel>;
 };

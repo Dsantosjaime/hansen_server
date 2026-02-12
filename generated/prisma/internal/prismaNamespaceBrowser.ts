@@ -56,7 +56,9 @@ export const ModelName = {
   SubGroup: 'SubGroup',
   Contact: 'Contact',
   EmailSend: 'EmailSend',
-  CampaignAttachment: 'CampaignAttachment'
+  CampaignAttachment: 'CampaignAttachment',
+  ToDo: 'ToDo',
+  PluginParam: 'PluginParam'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -162,6 +164,29 @@ export const CampaignAttachmentScalarFieldEnum = {
 } as const
 
 export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum]
+
+
+export const ToDoScalarFieldEnum = {
+  id: 'id',
+  contactId: 'contactId',
+  type: 'type',
+  title: 'title',
+  toDoAt: 'toDoAt',
+  done: 'done',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ToDoScalarFieldEnum = (typeof ToDoScalarFieldEnum)[keyof typeof ToDoScalarFieldEnum]
+
+
+export const PluginParamScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type'
+} as const
+
+export type PluginParamScalarFieldEnum = (typeof PluginParamScalarFieldEnum)[keyof typeof PluginParamScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -184,6 +184,7 @@ export declare const ModelName: {
     readonly Contact: "Contact";
     readonly EmailSend: "EmailSend";
     readonly CampaignAttachment: "CampaignAttachment";
+    readonly ToDo: "ToDo";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export interface TypeMapCb<GlobalOmitOptions = {}> extends runtime.Types.Utils.Fn<{
@@ -196,7 +197,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         omit: GlobalOmitOptions;
     };
     meta: {
-        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment";
+        modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment" | "toDo";
         txIsolationLevel: never;
     };
     model: {
@@ -792,6 +793,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
                 };
             };
         };
+        ToDo: {
+            payload: Prisma.$ToDoPayload<ExtArgs>;
+            fields: Prisma.ToDoFieldRefs;
+            operations: {
+                findUnique: {
+                    args: Prisma.ToDoFindUniqueArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload> | null;
+                };
+                findUniqueOrThrow: {
+                    args: Prisma.ToDoFindUniqueOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                findFirst: {
+                    args: Prisma.ToDoFindFirstArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload> | null;
+                };
+                findFirstOrThrow: {
+                    args: Prisma.ToDoFindFirstOrThrowArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                findMany: {
+                    args: Prisma.ToDoFindManyArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>[];
+                };
+                create: {
+                    args: Prisma.ToDoCreateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                createMany: {
+                    args: Prisma.ToDoCreateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                delete: {
+                    args: Prisma.ToDoDeleteArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                update: {
+                    args: Prisma.ToDoUpdateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                deleteMany: {
+                    args: Prisma.ToDoDeleteManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                updateMany: {
+                    args: Prisma.ToDoUpdateManyArgs<ExtArgs>;
+                    result: BatchPayload;
+                };
+                upsert: {
+                    args: Prisma.ToDoUpsertArgs<ExtArgs>;
+                    result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>;
+                };
+                aggregate: {
+                    args: Prisma.ToDoAggregateArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.AggregateToDo>;
+                };
+                groupBy: {
+                    args: Prisma.ToDoGroupByArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ToDoGroupByOutputType>[];
+                };
+                findRaw: {
+                    args: Prisma.ToDoFindRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                aggregateRaw: {
+                    args: Prisma.ToDoAggregateRawArgs<ExtArgs>;
+                    result: Prisma.JsonObject;
+                };
+                count: {
+                    args: Prisma.ToDoCountArgs<ExtArgs>;
+                    result: runtime.Types.Utils.Optional<Prisma.ToDoCountAggregateOutputType> | number;
+                };
+            };
+        };
     };
 } & {
     other: {
@@ -879,6 +954,17 @@ export declare const CampaignAttachmentScalarFieldEnum: {
     readonly expiresAt: "expiresAt";
 };
 export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum];
+export declare const ToDoScalarFieldEnum: {
+    readonly id: "id";
+    readonly contactId: "contactId";
+    readonly type: "type";
+    readonly title: "title";
+    readonly toDoAt: "toDoAt";
+    readonly done: "done";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type ToDoScalarFieldEnum = (typeof ToDoScalarFieldEnum)[keyof typeof ToDoScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";
@@ -896,6 +982,8 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>;
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>;
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>;
+export type EnumToDoTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ToDoType'>;
+export type ListEnumToDoTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ToDoType[]'>;
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>;
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>;
 export type BatchPayload = {
@@ -931,6 +1019,7 @@ export type GlobalOmitConfig = {
     contact?: Prisma.ContactOmit;
     emailSend?: Prisma.EmailSendOmit;
     campaignAttachment?: Prisma.CampaignAttachmentOmit;
+    toDo?: Prisma.ToDoOmit;
 };
 export type LogLevel = 'info' | 'query' | 'warn' | 'error';
 export type LogDefinition = {

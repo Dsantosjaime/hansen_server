@@ -14,6 +14,7 @@ import { BREVO_CLIENT } from "./brevo.constants";
 import type {
   BrevoClient,
   BrevoCreateCampaignFromTemplateInput,
+  BrevoEmailCampaign,
   BrevoEmailTemplate,
 } from "./brevo.client";
 
@@ -161,6 +162,39 @@ export const brevoClientProvider: Provider = {
 
       async deleteContactByEmail(email: string): Promise<void> {
         await contactsApi.deleteContact(email);
+      },
+
+      async listEmailCampaigns({
+        limit,
+        offset,
+        sort = "desc",
+        type = "classic",
+      }): Promise<BrevoEmailCampaign[]> {
+        // Signature SDK variable selon versions => on passe via any + unwrapBody
+        // getEmailCampaigns(type, status, startDate, endDate, limit, offset, sort)
+        const res = await emailCampaignsApi.getEmailCampaigns(
+          type,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          limit,
+          offset,
+          sort,
+        );
+
+        const data = unwrapBody<any>(res);
+        const campaigns = (data?.campaigns ?? []) as any[];
+
+        return campaigns.map((c) => ({
+          id: toNumber(c.id),
+          name: String(c.name ?? ""),
+          subject: String(c.subject ?? ""),
+          status: String(c.status ?? ""),
+          scheduledAt: (c.scheduledAt ?? null) as string | null,
+          createdAt: (c.createdAt ?? null) as string | null,
+          modifiedAt: (c.modifiedAt ?? null) as string | null,
+        }));
       },
     };
 

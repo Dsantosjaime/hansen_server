@@ -27,7 +27,6 @@ let UsersService = class UsersService {
             .catch(() => undefined);
     }
     async getUsers() {
-        console.log("test getuser");
         return this.prisma.user.findMany({
             include: { role: true },
         });

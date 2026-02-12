@@ -9,7 +9,17 @@
 * 🟢 You can import this file directly.
 */
 
+export const ToDoType = {
+  REMINDER: 'REMINDER',
+  SERVICE: 'SERVICE'
+} as const
+
+export type ToDoType = (typeof ToDoType)[keyof typeof ToDoType]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const PluginRestrictedParamType = {
+  FUNCTION: 'FUNCTION',
+  NAME: 'NAME'
+} as const
+
+export type PluginRestrictedParamType = (typeof PluginRestrictedParamType)[keyof typeof PluginRestrictedParamType]

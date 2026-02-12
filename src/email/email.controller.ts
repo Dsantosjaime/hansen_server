@@ -24,7 +24,7 @@ import { EmailService } from "./email.service";
 export class EmailController {
   constructor(private readonly emailService: EmailService) {}
 
-  @Get("contacts/:contactId/history")
+  @Get("contacts/:contactId")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
   @ApiOperation({ summary: "Historique des emails d’un contact" })

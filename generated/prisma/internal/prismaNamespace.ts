@@ -397,7 +397,9 @@ export const ModelName = {
   SubGroup: 'SubGroup',
   Contact: 'Contact',
   EmailSend: 'EmailSend',
-  CampaignAttachment: 'CampaignAttachment'
+  CampaignAttachment: 'CampaignAttachment',
+  ToDo: 'ToDo',
+  PluginParam: 'PluginParam'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -413,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment"
+    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment" | "toDo" | "pluginParam"
     txIsolationLevel: never
   }
   model: {
@@ -1009,6 +1011,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ToDo: {
+      payload: Prisma.$ToDoPayload<ExtArgs>
+      fields: Prisma.ToDoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ToDoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ToDoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        findFirst: {
+          args: Prisma.ToDoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ToDoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        findMany: {
+          args: Prisma.ToDoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>[]
+        }
+        create: {
+          args: Prisma.ToDoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        createMany: {
+          args: Prisma.ToDoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.ToDoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        update: {
+          args: Prisma.ToDoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        deleteMany: {
+          args: Prisma.ToDoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ToDoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.ToDoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ToDoPayload>
+        }
+        aggregate: {
+          args: Prisma.ToDoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateToDo>
+        }
+        groupBy: {
+          args: Prisma.ToDoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ToDoGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.ToDoFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.ToDoAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.ToDoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ToDoCountAggregateOutputType> | number
+        }
+      }
+    }
+    PluginParam: {
+      payload: Prisma.$PluginParamPayload<ExtArgs>
+      fields: Prisma.PluginParamFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PluginParamFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PluginParamFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        findFirst: {
+          args: Prisma.PluginParamFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PluginParamFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        findMany: {
+          args: Prisma.PluginParamFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>[]
+        }
+        create: {
+          args: Prisma.PluginParamCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        createMany: {
+          args: Prisma.PluginParamCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.PluginParamDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        update: {
+          args: Prisma.PluginParamUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        deleteMany: {
+          args: Prisma.PluginParamDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PluginParamUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.PluginParamUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PluginParamPayload>
+        }
+        aggregate: {
+          args: Prisma.PluginParamAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePluginParam>
+        }
+        groupBy: {
+          args: Prisma.PluginParamGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PluginParamGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.PluginParamFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.PluginParamAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.PluginParamCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PluginParamCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1125,6 +1275,29 @@ export const CampaignAttachmentScalarFieldEnum = {
 export type CampaignAttachmentScalarFieldEnum = (typeof CampaignAttachmentScalarFieldEnum)[keyof typeof CampaignAttachmentScalarFieldEnum]
 
 
+export const ToDoScalarFieldEnum = {
+  id: 'id',
+  contactId: 'contactId',
+  type: 'type',
+  title: 'title',
+  toDoAt: 'toDoAt',
+  done: 'done',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ToDoScalarFieldEnum = (typeof ToDoScalarFieldEnum)[keyof typeof ToDoScalarFieldEnum]
+
+
+export const PluginParamScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type'
+} as const
+
+export type PluginParamScalarFieldEnum = (typeof PluginParamScalarFieldEnum)[keyof typeof PluginParamScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1193,6 +1366,34 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ToDoType'
+ */
+export type EnumToDoTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ToDoType'>
+    
+
+
+/**
+ * Reference to a field of type 'ToDoType[]'
+ */
+export type ListEnumToDoTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ToDoType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PluginRestrictedParamType'
+ */
+export type EnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PluginRestrictedParamType'>
+    
+
+
+/**
+ * Reference to a field of type 'PluginRestrictedParamType[]'
+ */
+export type ListEnumPluginRestrictedParamTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PluginRestrictedParamType[]'>
     
 
 
@@ -1303,6 +1504,8 @@ export type GlobalOmitConfig = {
   contact?: Prisma.ContactOmit
   emailSend?: Prisma.EmailSendOmit
   campaignAttachment?: Prisma.CampaignAttachmentOmit
+  toDo?: Prisma.ToDoOmit
+  pluginParam?: Prisma.PluginParamOmit
 }
 
 /* Types for Logging */

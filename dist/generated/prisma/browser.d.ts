@@ -12,3 +12,4 @@ export type SubGroup = Prisma.SubGroupModel;
 export type Contact = Prisma.ContactModel;
 export type EmailSend = Prisma.EmailSendModel;
 export type CampaignAttachment = Prisma.CampaignAttachmentModel;
+export type ToDo = Prisma.ToDoModel;

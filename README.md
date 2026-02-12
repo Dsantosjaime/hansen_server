@@ -61,15 +61,6 @@ docker compose up -d
 
 ## Deployment
 
-docker compose --env-file hansen_server/.env \
- -f hansen_server/docker-compose.yml \
- -f hansen_server/docker-compose.override.yml \
- up -d --build
-
-docker compose --env-file hansen_server/.env \
- -f hansen_server/docker-compose.yml \
- up -d --build
-
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
 ## Resources
