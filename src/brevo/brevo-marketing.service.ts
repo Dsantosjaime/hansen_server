@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
 import {
   BadRequestException,
   Injectable,
@@ -11,11 +8,10 @@ import { Inject } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "src/prisma/prisma.service";
 import { ScheduleSendCampaignDto } from "./dto/schedule-send-campaign.dto";
-import { BrevoTemplateDto } from "./dto/brevo-template.dto";
 import { BREVO_CLIENT } from "./brevo.constants";
 import type { BrevoClient } from "./brevo.client";
-import { EmailService } from "src/email/email.service";
-import { BrevoCampaignDto } from "./dto/brevo-campaign.dto";
+import { EmailTemplateDto } from "src/email/dto/email-template.dto";
+import { EmailCampaignDto } from "src/email/dto/email-campaign.dto";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -33,7 +29,6 @@ export class BrevoMarketingService {
     @Inject(BREVO_CLIENT) private readonly brevo: BrevoClient,
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
   ) {
     this.senderEmail = this.config.getOrThrow<string>(
       "BREVO_MARKETING_SENDER_EMAIL",
@@ -46,10 +41,7 @@ export class BrevoMarketingService {
     );
   }
 
-  /**
-   * Templates marketing = "Templates" créés par l'utilisateur dans Brevo
-   */
-  async listTemplateCampaigns(): Promise<BrevoTemplateDto[]> {
+  async listTemplateCampaigns(): Promise<EmailTemplateDto[]> {
     const templates = await this.brevo.listEmailTemplates({
       limit: 100,
       offset: 0,
@@ -63,9 +55,6 @@ export class BrevoMarketingService {
     }));
   }
 
-  /**
-   * 1 list Brevo par SubGroup (persistée en DB via SubGroup.brevoListId)
-   */
   async ensureBrevoListForSubGroup(subGroupId: string): Promise<number> {
     const subGroup = await this.prisma.subGroup.findUnique({
       where: { id: subGroupId },
@@ -94,10 +83,6 @@ export class BrevoMarketingService {
     return listId;
   }
 
-  /**
-   * Résout les listIds Brevo à partir de groupIds/subGroupIds.
-   * - groupIds => expansion vers tous les subgroups du group
-   */
   async resolveBrevoListIds(input: {
     groupIds?: string[];
     subGroupIds?: string[];
@@ -126,15 +111,19 @@ export class BrevoMarketingService {
   }
 
   /**
-   * Envoi marketing:
-   * - récupère le template (subject)
-   * - crée une campagne via templateId (pas de htmlContent)
-   * - sendNow (scheduled désactivé si tu veux)
-   * - log DB (EmailSend) via EmailService
+   * IMPORTANT:
+   * - fait les actions Brevo (create campaign + send)
+   * - ne touche plus à emailSend
+   * - retourne les infos nécessaires pour logguer côté EmailService
    */
-  async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto) {
+  async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
+    campaignId: number;
+    listIds: number[];
+    scheduledAt: null;
+    subject: string;
+    recipients: Array<{ contactId: string; email: string }>;
+  }> {
     if (dto.scheduledAt) {
-      // comme tu as dit: on ne veut pas encore scheduled
       throw new BadRequestException("Scheduled is not supported yet.");
     }
 
@@ -162,6 +151,7 @@ export class BrevoMarketingService {
       listIds,
       templateId: dto.templateId,
       subject: tpl.subject,
+      ...(dto.attachmentUrl ? { attachmentUrl: dto.attachmentUrl } : {}),
     });
 
     const campaignId = Number(created.id);
@@ -173,18 +163,12 @@ export class BrevoMarketingService {
 
     await this.brevo.sendCampaignNow(campaignId);
 
-    await this.emailService.recordBrevoCampaignRecipients({
-      brevoCampaignId: campaignId,
-      subject: tpl.subject,
-      recipients: contacts.map((c) => ({ contactId: c.id, email: c.email })),
-      status: "queued",
-    });
-
     return {
       campaignId,
       listIds,
       scheduledAt: null,
-      recipientsLogged: contacts.length,
+      subject: tpl.subject,
+      recipients: contacts.map((c) => ({ contactId: c.id, email: c.email })),
     };
   }
 
@@ -312,7 +296,7 @@ export class BrevoMarketingService {
   async listMarketingCampaigns(input?: {
     limit?: number;
     offset?: number;
-  }): Promise<BrevoCampaignDto[]> {
+  }): Promise<EmailCampaignDto[]> {
     const limit = Number(input?.limit ?? 50);
     const offset = Number(input?.offset ?? 0);
 

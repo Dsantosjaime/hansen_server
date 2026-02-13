@@ -3,13 +3,11 @@ import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "src/prisma/prisma.service";
 
 type BrevoWebhookEvent = {
-  // payloads Brevo peuvent varier: on fait un mapping best-effort
   email?: string;
-  event?: string; // delivered/opened/clicked/bounced/unsubscribed...
-  date?: string | number; // ISO ou timestamp
+  event?: string;
+  date?: string | number;
   campaignId?: number | string;
 
-  // variantes possibles
   type?: string;
   eventDate?: string | number;
   timestamp?: string | number;
@@ -22,7 +20,7 @@ function toDate(v: unknown): Date | undefined {
     return Number.isNaN(d.getTime()) ? undefined : d;
   }
   if (typeof v === "number") {
-    const d = new Date(v * 1000); // souvent seconds
+    const d = new Date(v * 1000);
     return Number.isNaN(d.getTime()) ? undefined : d;
   }
   return undefined;
@@ -47,6 +45,10 @@ export class EmailService {
     });
   }
 
+  /**
+   * Enregistre les destinataires d’une campagne provider (ex: Brevo) en DB.
+   * Utilisé par le controller après l'appel au service provider.
+   */
   async recordBrevoCampaignRecipients(args: {
     brevoCampaignId: number;
     subject: string;
@@ -55,7 +57,7 @@ export class EmailService {
   }) {
     const status = args.status ?? "queued";
 
-    // dédup par email (propre ici, pas dans BrevoMarketingService)
+    // dédup par email
     const map = new Map<string, { contactId: string; email: string }>();
     for (const r of args.recipients) map.set(r.email, r);
 
@@ -67,16 +69,12 @@ export class EmailService {
       status,
     }));
 
-    // Optionnel mais recommandé si disponible: évite crash si relance
-    // (Prisma Mongo supporte createMany; skipDuplicates dépend des versions)
-    return this.prisma.emailSend.createMany({
-      data,
-    });
+    return this.prisma.emailSend.createMany({ data });
   }
 
   /**
    * Webhook Brevo: met à jour le statut.
-   * Upsert via (brevoCampaignId, email) pour éviter faux positifs.
+   * Upsert via (brevoCampaignId, email).
    */
   async handleBrevoWebhook(token: string | undefined, payload: unknown) {
     const expected = this.config.getOrThrow<string>("BREVO_WEBHOOK_TOKEN");
@@ -108,7 +106,6 @@ export class EmailService {
         continue;
       }
 
-      // Map event -> status + timestamp fields
       const dataToUpdate: Record<string, unknown> = { status: eventType };
 
       if (eventType === "sent") dataToUpdate.sentAt = eventAt;
@@ -118,7 +115,6 @@ export class EmailService {
       if (eventType.includes("bounce")) dataToUpdate.bouncedAt = eventAt;
       if (eventType.includes("unsub")) dataToUpdate.unsubscribedAt = eventAt;
 
-      // si on ne connaissait pas contactId, on peut le remplir depuis l’email unique
       const contact = await this.prisma.contact
         .findUnique({ where: { email } })
         .catch(() => null);
@@ -133,7 +129,7 @@ export class EmailService {
           email,
           contactId: contactId ?? null,
           brevoCampaignId: String(campaignId),
-          subject: "(unknown)", // sera rempli lors du send, sinon inconnu
+          subject: "(unknown)",
           status: eventType,
           ...dataToUpdate,
         },
