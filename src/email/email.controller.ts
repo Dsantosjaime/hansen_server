@@ -38,7 +38,10 @@ export class EmailController {
   @Get("contacts/:contactId")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
-  @ApiOperation({ summary: "Historique des emails d’un contact" })
+  @ApiOperation({
+    summary:
+      "Historique des campagnes d’emails d’un contact (dérivé via ciblage + createdAt)",
+  })
   @ApiParam({ name: "contactId", type: String })
   @CheckAbilities({ action: "read", subject: "Email" })
   getHistory(@Param("contactId") contactId: string) {
@@ -83,18 +86,23 @@ export class EmailController {
   })
   @CheckAbilities({ action: "create", subject: "Email" })
   async sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
-    // 1) Actions provider (Brevo)
     const result = await this.brevoMarketing.sendCampaignFromTemplate(dto);
 
-    // 2) Logging emailSend centralisé dans EmailService
-    await this.emailService.recordBrevoCampaignRecipients({
+    const listIds = (result.listIds ?? [])
+      .map((x: any) => Number(x))
+      .filter((n: number) => Number.isFinite(n));
+
+    await this.emailService.recordBrevoCampaignSend({
       brevoCampaignId: result.campaignId,
       subject: result.subject,
       recipients: result.recipients,
       status: "queued",
+      listIds,
+      scheduledAt: result.scheduledAt
+        ? new Date(result.scheduledAt)
+        : undefined,
     });
 
-    // 3) Réponse identique à l’ancienne route
     return {
       campaignId: result.campaignId,
       listIds: result.listIds,
@@ -103,10 +111,11 @@ export class EmailController {
     };
   }
 
+  // DB campagnes (remplace l'appel direct Brevo)
   @Get("marketing/campaigns")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
-  @ApiOperation({ summary: "Lister les campagnes marketing créées" })
+  @ApiOperation({ summary: "Lister les campagnes marketing (depuis la DB)" })
   @ApiQuery({ name: "limit", required: false, type: Number })
   @ApiQuery({ name: "offset", required: false, type: Number })
   @CheckAbilities({ action: "read", subject: "Email" })
@@ -114,10 +123,21 @@ export class EmailController {
     @Query("limit") limit?: string,
     @Query("offset") offset?: string,
   ) {
-    return this.brevoMarketing.listMarketingCampaigns({
+    return this.emailService.listEmailSends({
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
     });
+  }
+
+  // getEmailInfo
+  @Get("marketing/campaigns/:id")
+  @ApiBearerAuth("jwt")
+  @UseGuards(JwtAuthGuard, CaslGuard)
+  @ApiOperation({ summary: "Récupérer le détail d’une campagne (DB)" })
+  @ApiParam({ name: "id", type: String })
+  @CheckAbilities({ action: "read", subject: "Email" })
+  getEmailInfo(@Param("id") id: string) {
+    return this.emailService.getEmailInfo(id);
   }
 
   @Post("marketing/sub-groups/:id/ensure-list")

@@ -85,17 +85,42 @@ model Contact {
   lastEmail   String
   groupId     String @db.ObjectId
   subGroupId  String @db.ObjectId
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+type EmailSendSubGroup {
+  subGroupId   String @db.ObjectId
+  subGroupName String
+}
+
+type EmailSendGroup {
+  groupId    String @db.ObjectId
+  groupName  String
+  subGroups  EmailSendSubGroup[]
 }
 
 model EmailSend {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  contactId       String?  @db.ObjectId
-  email           String
-  brevoCampaignId String
+  // 1 doc par campagne provider
+  brevoCampaignId String   @unique
   subject         String
   status          String
 
+  // Ciblage enregistré (pour affichage)
+  affected        EmailSendGroup[]
+
+  // Ciblage "plat" (pour filtres / historique contact)
+  affectedGroupIds    String[] @db.ObjectId
+  affectedSubGroupIds String[] @db.ObjectId
+
+  recipientsCount Int?
+  listIds         Int[]
+  scheduledAt     DateTime?
+
+  // timestamps globaux (pas par destinataire)
   sentAt          DateTime?
   deliveredAt     DateTime?
   openedAt        DateTime?
@@ -106,10 +131,8 @@ model EmailSend {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@index([contactId])
-  @@index([email])
-  @@index([brevoCampaignId])
-  @@unique([brevoCampaignId, email])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model CampaignAttachment {
@@ -149,4 +172,13 @@ model PluginParam {
   id   String                    @id @default(auto()) @map("_id") @db.ObjectId
   name String
   type PluginRestrictedParamType
+}
+
+model EmailAddressTemplate {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  pattern     String   // pattern du local-part (avant @)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

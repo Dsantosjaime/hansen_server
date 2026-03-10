@@ -8,6 +8,8 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma };
 export type Permission = Prisma.PermissionModel;
 export type PermissionSubGroup = Prisma.PermissionSubGroupModel;
+export type EmailSendSubGroup = Prisma.EmailSendSubGroupModel;
+export type EmailSendGroup = Prisma.EmailSendGroupModel;
 export type User = Prisma.UserModel;
 export type PermissionGroup = Prisma.PermissionGroupModel;
 export type Role = Prisma.RoleModel;
@@ -17,3 +19,5 @@ export type Contact = Prisma.ContactModel;
 export type EmailSend = Prisma.EmailSendModel;
 export type CampaignAttachment = Prisma.CampaignAttachmentModel;
 export type ToDo = Prisma.ToDoModel;
+export type PluginParam = Prisma.PluginParamModel;
+export type EmailAddressTemplate = Prisma.EmailAddressTemplateModel;

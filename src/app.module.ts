@@ -17,6 +17,9 @@ import {
 } from "@nestjs/serve-static";
 import { TodoModule } from "./todo/todo.module";
 import { PluginParamsModule } from "./plugin-params/plugin-params.module";
+import { ScrapModule } from "./scrap/scrap.module";
+import { EmailAddressTemplatesModule } from "./email-address-templates/email-address-templates.module";
+import { ExtractModule } from "./extract/extract.module";
 
 @Module({
   imports: [
@@ -49,6 +52,9 @@ import { PluginParamsModule } from "./plugin-params/plugin-params.module";
     }),
     TodoModule,
     PluginParamsModule,
+    ScrapModule,
+    EmailAddressTemplatesModule,
+    ExtractModule,
   ],
 })
 export class AppModule {}

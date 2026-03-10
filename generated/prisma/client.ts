@@ -57,6 +57,16 @@ export type Permission = Prisma.PermissionModel
  */
 export type PermissionSubGroup = Prisma.PermissionSubGroupModel
 /**
+ * Model EmailSendSubGroup
+ * 
+ */
+export type EmailSendSubGroup = Prisma.EmailSendSubGroupModel
+/**
+ * Model EmailSendGroup
+ * 
+ */
+export type EmailSendGroup = Prisma.EmailSendGroupModel
+/**
  * Model User
  * 
  */
@@ -106,3 +116,8 @@ export type ToDo = Prisma.ToDoModel
  * 
  */
 export type PluginParam = Prisma.PluginParamModel
+/**
+ * Model EmailAddressTemplate
+ * 
+ */
+export type EmailAddressTemplate = Prisma.EmailAddressTemplateModel

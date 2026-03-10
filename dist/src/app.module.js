@@ -21,6 +21,11 @@ const contacts_module_1 = require("./contacts/contacts.module");
 const email_module_1 = require("./email/email.module");
 const campaign_attachments_module_1 = require("./campaign-attachments/campaign-attachments.module");
 const serve_static_1 = require("@nestjs/serve-static");
+const todo_module_1 = require("./todo/todo.module");
+const plugin_params_module_1 = require("./plugin-params/plugin-params.module");
+const scrap_module_1 = require("./scrap/scrap.module");
+const email_address_templates_module_1 = require("./email-address-templates/email-address-templates.module");
+const extract_module_1 = require("./extract/extract.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -52,6 +57,11 @@ exports.AppModule = AppModule = __decorate([
                     ];
                 },
             }),
+            todo_module_1.TodoModule,
+            plugin_params_module_1.PluginParamsModule,
+            scrap_module_1.ScrapModule,
+            email_address_templates_module_1.EmailAddressTemplatesModule,
+            extract_module_1.ExtractModule,
         ],
     })
 ], AppModule);

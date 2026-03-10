@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -10,7 +8,9 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CreateContactDto } from "./dto/create-contact.dto";
 import { UpdateContactDto } from "./dto/update-contact.dto";
 import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaNamespace";
-import { BrevoMarketingService } from "src/brevo/brevo-marketing.service";
+import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
+import { SubGroupsService } from "@/subgroups/subgroups.service";
+import { Prisma } from "generated/prisma/client";
 
 @Injectable()
 export class ContactsService {
@@ -19,25 +19,11 @@ export class ContactsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly brevo: BrevoMarketingService,
+    private readonly subGroupsService: SubGroupsService,
   ) {}
 
-  private async assertGroupAndSubGroup(groupId: string, subGroupId: string) {
-    const group = await this.prisma.group.findUnique({
-      where: { id: groupId },
-    });
-    if (!group) throw new NotFoundException(`Group ${groupId} not found`);
-
-    const subGroup = await this.prisma.subGroup.findUnique({
-      where: { id: subGroupId },
-    });
-    if (!subGroup)
-      throw new NotFoundException(`SubGroup ${subGroupId} not found`);
-
-    if (subGroup.groupId !== groupId) {
-      throw new BadRequestException(
-        `SubGroup ${subGroupId} does not belong to Group ${groupId}`,
-      );
-    }
+  public async assertGroupAndSubGroup(groupId: string, subGroupId: string) {
+    return this.subGroupsService.assertGroupAndSubGroup(groupId, subGroupId);
   }
 
   private toBrevoAttributes(contact: {
@@ -92,7 +78,7 @@ export class ContactsService {
 
       this.syncContactToBrevo(created.id).catch((e) => {
         this.logger.warn(
-          `Brevo sync failed after create for contact=${created.id}: ${e?.message ?? e}`,
+          `Brevo sync failed after create for contact=${created.id}: ${e}`,
         );
       });
 
@@ -155,19 +141,22 @@ export class ContactsService {
             ? { lastContact: dto.lastContact }
             : {}),
           ...(dto.lastEmail !== undefined ? { lastEmail: dto.lastEmail } : {}),
+          ...(dto.groupId !== undefined ? { groupId: dto.groupId } : {}),
+          ...(dto.subGroupId !== undefined
+            ? { subGroupId: dto.subGroupId }
+            : {}),
         },
       });
 
       if (existing.email !== updated.email) {
         this.brevo.deleteBrevoContactByEmail(existing.email).catch((e) => {
-          this.logger.warn(`Brevo delete old email failed: ${e?.message ?? e}`);
+          this.logger.warn(`Brevo delete old email failed: ${e}`);
         });
       }
 
-      // Upsert dans la nouvelle list
       this.syncContactToBrevo(updated.id).catch((e) => {
         this.logger.warn(
-          `Brevo sync failed after update for contact=${updated.id}: ${e?.message ?? e}`,
+          `Brevo sync failed after update for contact=${updated.id}: ${e}`,
         );
       });
 
@@ -188,22 +177,102 @@ export class ContactsService {
 
     const deleted = await this.prisma.contact.delete({ where: { id } });
 
-    // Optionnel: retirer de la liste + supprimer le contact Brevo
     this.brevo
       .ensureBrevoListForSubGroup(existing.subGroupId)
       .then((listId) =>
         this.brevo.removeEmailsFromList(listId, [existing.email]),
       )
-      .catch((e) =>
-        this.logger.warn(`Brevo remove from list failed: ${e?.message ?? e}`),
-      );
+      .catch((e) => this.logger.warn(`Brevo remove from list failed: ${e}`));
 
     this.brevo
       .deleteBrevoContactByEmail(existing.email)
-      .catch((e) =>
-        this.logger.warn(`Brevo delete contact failed: ${e?.message ?? e}`),
-      );
+      .catch((e) => this.logger.warn(`Brevo delete contact failed: ${e}`));
 
     return deleted;
+  }
+
+  async upsertFromScrap(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    function: string;
+    status: string;
+    groupId: string;
+    subGroupId: string;
+  }) {
+    await this.assertGroupAndSubGroup(input.groupId, input.subGroupId);
+
+    return this.prisma.contact.upsert({
+      where: { email: input.email },
+      create: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        function: input.function,
+        status: input.status,
+        email: input.email,
+        phoneNumber: [],
+        lastContact: "",
+        lastEmail: "",
+        groupId: input.groupId,
+        subGroupId: input.subGroupId,
+      },
+      update: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        function: input.function,
+        status: input.status,
+        groupId: input.groupId,
+        subGroupId: input.subGroupId,
+      },
+    });
+  }
+
+  async findExistingEmails(emails: string[]): Promise<Set<string>> {
+    const unique = [
+      ...new Set((emails ?? []).map((e) => e.trim().toLowerCase())),
+    ].filter(Boolean);
+
+    if (!unique.length) return new Set();
+
+    const rows = await this.prisma.contact.findMany({
+      where: { email: { in: unique } },
+      select: { email: true },
+    });
+
+    return new Set(rows.map((r) => r.email.trim().toLowerCase()));
+  }
+
+  async findByGroupSubGroupPairs(
+    input: {
+      pairs: { groupId: string; subGroupId: string }[];
+      status?: string;
+    },
+    options?: {
+      select?: Prisma.ContactSelect;
+    },
+  ) {
+    if (!input.pairs?.length) return [];
+
+    const select: Prisma.ContactSelect = options?.select
+      ? { ...options.select, groupId: true, subGroupId: true }
+      : {
+          groupId: true,
+          subGroupId: true,
+          lastName: true,
+          function: true,
+          email: true,
+        };
+
+    return this.prisma.contact.findMany({
+      where: {
+        ...(input.status ? { status: input.status } : {}),
+        OR: input.pairs.map((p) => ({
+          groupId: p.groupId,
+          subGroupId: p.subGroupId,
+        })),
+      },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select,
+    });
   }
 }

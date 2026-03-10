@@ -1,21 +1,43 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateSubGroupDto } from "./dto/create-sub-group.dto";
 import { UpdateSubGroupDto } from "./dto/update-sub-group.dto";
-import { BrevoMarketingService } from "src/brevo/brevo-marketing.service";
+import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
+import { GroupsService } from "src/groups/groups.service";
 
 @Injectable()
 export class SubGroupsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly brevoMarketing: BrevoMarketingService,
+    private readonly groupsService: GroupsService,
   ) {}
 
-  private async assertGroupExists(groupId: string) {
-    const exists = await this.prisma.group.findUnique({
-      where: { id: groupId },
+  async assertGroupAndSubGroup(groupId: string, subGroupId: string) {
+    await this.groupsService.assertExists(groupId);
+
+    const subGroup = await this.prisma.subGroup.findUnique({
+      where: { id: subGroupId },
+      select: { id: true, groupId: true },
     });
-    if (!exists) throw new NotFoundException(`Group ${groupId} not found`);
+
+    if (!subGroup) {
+      throw new NotFoundException(`SubGroup ${subGroupId} not found`);
+    }
+
+    if (subGroup.groupId !== groupId) {
+      throw new BadRequestException(
+        `SubGroup ${subGroupId} does not belong to Group ${groupId}`,
+      );
+    }
+  }
+
+  private async assertGroupExists(groupId: string) {
+    await this.groupsService.assertExists(groupId);
   }
 
   async create(dto: CreateSubGroupDto) {
@@ -29,10 +51,8 @@ export class SubGroupsService {
       include: { group: true },
     });
 
-    // Auto: crée la liste Brevo si absente, et stocke brevoListId
     await this.brevoMarketing.ensureBrevoListForSubGroup(created.id);
 
-    // Re-fetch pour retourner brevoListId (optionnel mais pratique)
     return this.prisma.subGroup.findUnique({
       where: { id: created.id },
       include: { group: true },

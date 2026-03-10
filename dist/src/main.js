@@ -12,7 +12,11 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
     }));
     app.enableCors({
-        origin: ["https://app.localtest.me", "https://app.localtest.me:8443"],
+        origin: [
+            "https://app.localtest.me",
+            "https://app.localtest.me:8443",
+            "chrome-extension://jnplneoghhmipijoajpgcgdcaalibhbc",
+        ],
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Authorization", "Content-Type"],
         credentials: true,

@@ -49,5 +49,11 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
     get toDo(): Prisma.ToDoDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
+    get pluginParam(): Prisma.PluginParamDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    get emailAddressTemplate(): Prisma.EmailAddressTemplateDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
 }
 export declare function getPrismaClientClass(dirname: string): PrismaClientConstructor;

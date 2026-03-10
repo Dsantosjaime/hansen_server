@@ -7,6 +7,14 @@ import { UpdateGroupDto } from "./dto/update-group.dto";
 export class GroupsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async assertExists(groupId: string) {
+    const exists = await this.prisma.group.findUnique({
+      where: { id: groupId },
+      select: { id: true },
+    });
+    if (!exists) throw new NotFoundException(`Group ${groupId} not found`);
+  }
+
   async create(dto: CreateGroupDto) {
     return this.prisma.group.create({
       data: { name: dto.name },

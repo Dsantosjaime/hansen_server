@@ -399,7 +399,8 @@ export const ModelName = {
   EmailSend: 'EmailSend',
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
-  PluginParam: 'PluginParam'
+  PluginParam: 'PluginParam',
+  EmailAddressTemplate: 'EmailAddressTemplate'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -415,7 +416,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment" | "toDo" | "pluginParam"
+    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment" | "toDo" | "pluginParam" | "emailAddressTemplate"
     txIsolationLevel: never
   }
   model: {
@@ -1159,6 +1160,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    EmailAddressTemplate: {
+      payload: Prisma.$EmailAddressTemplatePayload<ExtArgs>
+      fields: Prisma.EmailAddressTemplateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.EmailAddressTemplateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.EmailAddressTemplateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        findFirst: {
+          args: Prisma.EmailAddressTemplateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.EmailAddressTemplateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        findMany: {
+          args: Prisma.EmailAddressTemplateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>[]
+        }
+        create: {
+          args: Prisma.EmailAddressTemplateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        createMany: {
+          args: Prisma.EmailAddressTemplateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.EmailAddressTemplateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        update: {
+          args: Prisma.EmailAddressTemplateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        deleteMany: {
+          args: Prisma.EmailAddressTemplateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.EmailAddressTemplateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.EmailAddressTemplateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$EmailAddressTemplatePayload>
+        }
+        aggregate: {
+          args: Prisma.EmailAddressTemplateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateEmailAddressTemplate>
+        }
+        groupBy: {
+          args: Prisma.EmailAddressTemplateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailAddressTemplateGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.EmailAddressTemplateFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.EmailAddressTemplateAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.EmailAddressTemplateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.EmailAddressTemplateCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1235,7 +1310,9 @@ export const ContactScalarFieldEnum = {
   lastContact: 'lastContact',
   lastEmail: 'lastEmail',
   groupId: 'groupId',
-  subGroupId: 'subGroupId'
+  subGroupId: 'subGroupId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
@@ -1243,11 +1320,14 @@ export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeo
 
 export const EmailSendScalarFieldEnum = {
   id: 'id',
-  contactId: 'contactId',
-  email: 'email',
   brevoCampaignId: 'brevoCampaignId',
   subject: 'subject',
   status: 'status',
+  affectedGroupIds: 'affectedGroupIds',
+  affectedSubGroupIds: 'affectedSubGroupIds',
+  recipientsCount: 'recipientsCount',
+  listIds: 'listIds',
+  scheduledAt: 'scheduledAt',
   sentAt: 'sentAt',
   deliveredAt: 'deliveredAt',
   openedAt: 'openedAt',
@@ -1296,6 +1376,18 @@ export const PluginParamScalarFieldEnum = {
 } as const
 
 export type PluginParamScalarFieldEnum = (typeof PluginParamScalarFieldEnum)[keyof typeof PluginParamScalarFieldEnum]
+
+
+export const EmailAddressTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  pattern: 'pattern',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EmailAddressTemplateScalarFieldEnum = (typeof EmailAddressTemplateScalarFieldEnum)[keyof typeof EmailAddressTemplateScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1506,6 +1598,7 @@ export type GlobalOmitConfig = {
   campaignAttachment?: Prisma.CampaignAttachmentOmit
   toDo?: Prisma.ToDoOmit
   pluginParam?: Prisma.PluginParamOmit
+  emailAddressTemplate?: Prisma.EmailAddressTemplateOmit
 }
 
 /* Types for Logging */

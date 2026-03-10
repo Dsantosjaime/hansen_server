@@ -35,6 +35,8 @@ export declare const ModelName: {
     readonly EmailSend: "EmailSend";
     readonly CampaignAttachment: "CampaignAttachment";
     readonly ToDo: "ToDo";
+    readonly PluginParam: "PluginParam";
+    readonly EmailAddressTemplate: "EmailAddressTemplate";
 };
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
 export declare const UserScalarFieldEnum: {
@@ -82,15 +84,20 @@ export declare const ContactScalarFieldEnum: {
     readonly lastEmail: "lastEmail";
     readonly groupId: "groupId";
     readonly subGroupId: "subGroupId";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
 };
 export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum];
 export declare const EmailSendScalarFieldEnum: {
     readonly id: "id";
-    readonly contactId: "contactId";
-    readonly email: "email";
     readonly brevoCampaignId: "brevoCampaignId";
     readonly subject: "subject";
     readonly status: "status";
+    readonly affectedGroupIds: "affectedGroupIds";
+    readonly affectedSubGroupIds: "affectedSubGroupIds";
+    readonly recipientsCount: "recipientsCount";
+    readonly listIds: "listIds";
+    readonly scheduledAt: "scheduledAt";
     readonly sentAt: "sentAt";
     readonly deliveredAt: "deliveredAt";
     readonly openedAt: "openedAt";
@@ -123,6 +130,21 @@ export declare const ToDoScalarFieldEnum: {
     readonly updatedAt: "updatedAt";
 };
 export type ToDoScalarFieldEnum = (typeof ToDoScalarFieldEnum)[keyof typeof ToDoScalarFieldEnum];
+export declare const PluginParamScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly type: "type";
+};
+export type PluginParamScalarFieldEnum = (typeof PluginParamScalarFieldEnum)[keyof typeof PluginParamScalarFieldEnum];
+export declare const EmailAddressTemplateScalarFieldEnum: {
+    readonly id: "id";
+    readonly name: "name";
+    readonly pattern: "pattern";
+    readonly isActive: "isActive";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type EmailAddressTemplateScalarFieldEnum = (typeof EmailAddressTemplateScalarFieldEnum)[keyof typeof EmailAddressTemplateScalarFieldEnum];
 export declare const SortOrder: {
     readonly asc: "asc";
     readonly desc: "desc";

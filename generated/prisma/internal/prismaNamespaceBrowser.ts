@@ -58,7 +58,8 @@ export const ModelName = {
   EmailSend: 'EmailSend',
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
-  PluginParam: 'PluginParam'
+  PluginParam: 'PluginParam',
+  EmailAddressTemplate: 'EmailAddressTemplate'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -126,7 +127,9 @@ export const ContactScalarFieldEnum = {
   lastContact: 'lastContact',
   lastEmail: 'lastEmail',
   groupId: 'groupId',
-  subGroupId: 'subGroupId'
+  subGroupId: 'subGroupId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
@@ -134,11 +137,14 @@ export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeo
 
 export const EmailSendScalarFieldEnum = {
   id: 'id',
-  contactId: 'contactId',
-  email: 'email',
   brevoCampaignId: 'brevoCampaignId',
   subject: 'subject',
   status: 'status',
+  affectedGroupIds: 'affectedGroupIds',
+  affectedSubGroupIds: 'affectedSubGroupIds',
+  recipientsCount: 'recipientsCount',
+  listIds: 'listIds',
+  scheduledAt: 'scheduledAt',
   sentAt: 'sentAt',
   deliveredAt: 'deliveredAt',
   openedAt: 'openedAt',
@@ -187,6 +193,18 @@ export const PluginParamScalarFieldEnum = {
 } as const
 
 export type PluginParamScalarFieldEnum = (typeof PluginParamScalarFieldEnum)[keyof typeof PluginParamScalarFieldEnum]
+
+
+export const EmailAddressTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  pattern: 'pattern',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EmailAddressTemplateScalarFieldEnum = (typeof EmailAddressTemplateScalarFieldEnum)[keyof typeof EmailAddressTemplateScalarFieldEnum]
 
 
 export const SortOrder = {
