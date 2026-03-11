@@ -96,9 +96,11 @@ export class SubGroupsService {
   async remove(id: string) {
     await this.findOne(id);
 
-    return this.prisma.subGroup.delete({
-      where: { id },
-      include: { group: true },
-    });
+    const [, deletedSubGroup] = await this.prisma.$transaction([
+      this.prisma.contact.deleteMany({ where: { subGroupId: id } }),
+      this.prisma.subGroup.delete({ where: { id }, include: { group: true } }),
+    ]);
+
+    return deletedSubGroup;
   }
 }

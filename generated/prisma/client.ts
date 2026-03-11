@@ -102,6 +102,11 @@ export type Contact = Prisma.ContactModel
  */
 export type EmailSend = Prisma.EmailSendModel
 /**
+ * Model TemplateSubGroupCursor
+ * 
+ */
+export type TemplateSubGroupCursor = Prisma.TemplateSubGroupCursorModel
+/**
  * Model CampaignAttachment
  * 
  */

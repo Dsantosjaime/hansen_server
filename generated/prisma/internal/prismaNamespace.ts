@@ -397,6 +397,7 @@ export const ModelName = {
   SubGroup: 'SubGroup',
   Contact: 'Contact',
   EmailSend: 'EmailSend',
+  TemplateSubGroupCursor: 'TemplateSubGroupCursor',
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
   PluginParam: 'PluginParam',
@@ -416,7 +417,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "campaignAttachment" | "toDo" | "pluginParam" | "emailAddressTemplate"
+    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "templateSubGroupCursor" | "campaignAttachment" | "toDo" | "pluginParam" | "emailAddressTemplate"
     txIsolationLevel: never
   }
   model: {
@@ -938,6 +939,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TemplateSubGroupCursor: {
+      payload: Prisma.$TemplateSubGroupCursorPayload<ExtArgs>
+      fields: Prisma.TemplateSubGroupCursorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TemplateSubGroupCursorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TemplateSubGroupCursorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        findFirst: {
+          args: Prisma.TemplateSubGroupCursorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TemplateSubGroupCursorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        findMany: {
+          args: Prisma.TemplateSubGroupCursorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>[]
+        }
+        create: {
+          args: Prisma.TemplateSubGroupCursorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        createMany: {
+          args: Prisma.TemplateSubGroupCursorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.TemplateSubGroupCursorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        update: {
+          args: Prisma.TemplateSubGroupCursorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        deleteMany: {
+          args: Prisma.TemplateSubGroupCursorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TemplateSubGroupCursorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.TemplateSubGroupCursorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TemplateSubGroupCursorPayload>
+        }
+        aggregate: {
+          args: Prisma.TemplateSubGroupCursorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTemplateSubGroupCursor>
+        }
+        groupBy: {
+          args: Prisma.TemplateSubGroupCursorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TemplateSubGroupCursorGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.TemplateSubGroupCursorFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.TemplateSubGroupCursorAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.TemplateSubGroupCursorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TemplateSubGroupCursorCountAggregateOutputType> | number
+        }
+      }
+    }
     CampaignAttachment: {
       payload: Prisma.$CampaignAttachmentPayload<ExtArgs>
       fields: Prisma.CampaignAttachmentFieldRefs
@@ -1321,12 +1396,15 @@ export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeo
 export const EmailSendScalarFieldEnum = {
   id: 'id',
   brevoCampaignId: 'brevoCampaignId',
+  templateId: 'templateId',
+  name: 'name',
   subject: 'subject',
   status: 'status',
   affectedGroupIds: 'affectedGroupIds',
   affectedSubGroupIds: 'affectedSubGroupIds',
   recipientsCount: 'recipientsCount',
   listIds: 'listIds',
+  tempListId: 'tempListId',
   scheduledAt: 'scheduledAt',
   sentAt: 'sentAt',
   deliveredAt: 'deliveredAt',
@@ -1339,6 +1417,18 @@ export const EmailSendScalarFieldEnum = {
 } as const
 
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum]
+
+
+export const TemplateSubGroupCursorScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  subGroupId: 'subGroupId',
+  lastSentAt: 'lastSentAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TemplateSubGroupCursorScalarFieldEnum = (typeof TemplateSubGroupCursorScalarFieldEnum)[keyof typeof TemplateSubGroupCursorScalarFieldEnum]
 
 
 export const CampaignAttachmentScalarFieldEnum = {
@@ -1595,6 +1685,7 @@ export type GlobalOmitConfig = {
   subGroup?: Prisma.SubGroupOmit
   contact?: Prisma.ContactOmit
   emailSend?: Prisma.EmailSendOmit
+  templateSubGroupCursor?: Prisma.TemplateSubGroupCursorOmit
   campaignAttachment?: Prisma.CampaignAttachmentOmit
   toDo?: Prisma.ToDoOmit
   pluginParam?: Prisma.PluginParamOmit

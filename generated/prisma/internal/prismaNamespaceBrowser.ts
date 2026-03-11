@@ -56,6 +56,7 @@ export const ModelName = {
   SubGroup: 'SubGroup',
   Contact: 'Contact',
   EmailSend: 'EmailSend',
+  TemplateSubGroupCursor: 'TemplateSubGroupCursor',
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
   PluginParam: 'PluginParam',
@@ -138,12 +139,15 @@ export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeo
 export const EmailSendScalarFieldEnum = {
   id: 'id',
   brevoCampaignId: 'brevoCampaignId',
+  templateId: 'templateId',
+  name: 'name',
   subject: 'subject',
   status: 'status',
   affectedGroupIds: 'affectedGroupIds',
   affectedSubGroupIds: 'affectedSubGroupIds',
   recipientsCount: 'recipientsCount',
   listIds: 'listIds',
+  tempListId: 'tempListId',
   scheduledAt: 'scheduledAt',
   sentAt: 'sentAt',
   deliveredAt: 'deliveredAt',
@@ -156,6 +160,18 @@ export const EmailSendScalarFieldEnum = {
 } as const
 
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum]
+
+
+export const TemplateSubGroupCursorScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  subGroupId: 'subGroupId',
+  lastSentAt: 'lastSentAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TemplateSubGroupCursorScalarFieldEnum = (typeof TemplateSubGroupCursorScalarFieldEnum)[keyof typeof TemplateSubGroupCursorScalarFieldEnum]
 
 
 export const CampaignAttachmentScalarFieldEnum = {

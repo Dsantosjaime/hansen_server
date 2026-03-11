@@ -55,6 +55,10 @@ export class BrevoMarketingService {
     }));
   }
 
+  async getTemplate(templateId: number) {
+    return this.brevo.getEmailTemplate(templateId);
+  }
+
   async ensureBrevoListForSubGroup(subGroupId: string): Promise<number> {
     const subGroup = await this.prisma.subGroup.findUnique({
       where: { id: subGroupId },
@@ -111,47 +115,38 @@ export class BrevoMarketingService {
   }
 
   /**
-   * IMPORTANT:
-   * - fait les actions Brevo (create campaign + send)
-   * - ne touche plus à emailSend
-   * - retourne les infos nécessaires pour logguer côté EmailService
+   * Crée une liste temporaire (utilisée pour envoyer uniquement aux nouveaux contacts)
    */
-  async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
-    campaignId: number;
-    listIds: number[];
-    scheduledAt: null;
+  async createTemporaryList(label: string): Promise<number> {
+    const created = await this.brevo.createList(label);
+    const listId = Number(created.id);
+    if (!listId)
+      throw new InternalServerErrorException("Brevo did not return list id");
+    return listId;
+  }
+
+  /**
+   * Crée une campagne depuis un template, ciblée sur DES listIds donnés, puis envoi immédiat
+   * (Contrairement à l'ancienne méthode, ici on ne résout pas la sélection)
+   */
+  async createAndSendCampaignFromTemplateToLists(args: {
+    templateId: number;
+    name: string;
     subject: string;
-    recipients: Array<{ contactId: string; email: string }>;
-  }> {
-    if (dto.scheduledAt) {
-      throw new BadRequestException("Scheduled is not supported yet.");
+    listIds: number[];
+    attachmentUrl?: string;
+  }): Promise<{ campaignId: number }> {
+    if (!args.listIds.length) {
+      throw new NotFoundException("No target lists (empty listIds).");
     }
-
-    const listIds = await this.resolveBrevoListIds({
-      groupIds: dto.groupIds,
-      subGroupIds: dto.subGroupIds,
-    });
-
-    if (!listIds.length) {
-      throw new NotFoundException(
-        "No target lists resolved (empty selection).",
-      );
-    }
-
-    const contacts = await this.resolveContactsForSelection({
-      groupIds: dto.groupIds,
-      subGroupIds: dto.subGroupIds,
-    });
-
-    const tpl = await this.brevo.getEmailTemplate(dto.templateId);
 
     const created = await this.brevo.createCampaignFromTemplate({
-      name: dto.name ?? `Campaign from template ${dto.templateId}`,
+      name: args.name,
       sender: { name: this.senderName, email: this.senderEmail },
-      listIds,
-      templateId: dto.templateId,
-      subject: tpl.subject,
-      ...(dto.attachmentUrl ? { attachmentUrl: dto.attachmentUrl } : {}),
+      listIds: args.listIds,
+      templateId: args.templateId,
+      subject: args.subject,
+      ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
     });
 
     const campaignId = Number(created.id);
@@ -163,13 +158,7 @@ export class BrevoMarketingService {
 
     await this.brevo.sendCampaignNow(campaignId);
 
-    return {
-      campaignId,
-      listIds,
-      scheduledAt: null,
-      subject: tpl.subject,
-      recipients: contacts.map((c) => ({ contactId: c.id, email: c.email })),
-    };
+    return { campaignId };
   }
 
   async upsertContactToList(params: {
@@ -267,6 +256,66 @@ export class BrevoMarketingService {
     }
 
     return { subGroups: subGroups.length, results };
+  }
+
+  /**
+   * Ancienne route (Brevo direct) conservée si tu l'utilises ailleurs.
+   * (Tu peux la garder, mais notre flow "new-only" ne l'utilise plus.)
+   */
+  async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
+    campaignId: number;
+    listIds: number[];
+    scheduledAt: null;
+    subject: string;
+    recipients: Array<{ contactId: string; email: string }>;
+  }> {
+    if (dto.scheduledAt) {
+      throw new BadRequestException("Scheduled is not supported yet.");
+    }
+
+    const listIds = await this.resolveBrevoListIds({
+      groupIds: dto.groupIds,
+      subGroupIds: dto.subGroupIds,
+    });
+
+    if (!listIds.length) {
+      throw new NotFoundException(
+        "No target lists resolved (empty selection).",
+      );
+    }
+
+    const contacts = await this.resolveContactsForSelection({
+      groupIds: dto.groupIds,
+      subGroupIds: dto.subGroupIds,
+    });
+
+    const tpl = await this.brevo.getEmailTemplate(dto.templateId);
+
+    const created = await this.brevo.createCampaignFromTemplate({
+      name: dto.name ?? `Campaign from template ${dto.templateId}`,
+      sender: { name: this.senderName, email: this.senderEmail },
+      listIds,
+      templateId: dto.templateId,
+      subject: tpl.subject,
+      ...(dto.attachmentUrl ? { attachmentUrl: dto.attachmentUrl } : {}),
+    });
+
+    const campaignId = Number(created.id);
+    if (!campaignId) {
+      throw new InternalServerErrorException(
+        "Brevo did not return campaign id",
+      );
+    }
+
+    await this.brevo.sendCampaignNow(campaignId);
+
+    return {
+      campaignId,
+      listIds,
+      scheduledAt: null,
+      subject: tpl.subject,
+      recipients: contacts.map((c) => ({ contactId: c.id, email: c.email })),
+    };
   }
 
   private async resolveContactsForSelection(input: {

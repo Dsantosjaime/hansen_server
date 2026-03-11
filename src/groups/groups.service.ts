@@ -52,13 +52,12 @@ export class GroupsService {
   async remove(id: string) {
     await this.findOne(id);
 
-    await this.prisma.subGroup.deleteMany({
-      where: { groupId: id },
-    });
+    const [, , deletedGroup] = await this.prisma.$transaction([
+      this.prisma.contact.deleteMany({ where: { groupId: id } }),
+      this.prisma.subGroup.deleteMany({ where: { groupId: id } }),
+      this.prisma.group.delete({ where: { id }, include: { subGroups: true } }),
+    ]);
 
-    return this.prisma.group.delete({
-      where: { id },
-      include: { subGroups: true },
-    });
+    return deletedGroup;
   }
 }

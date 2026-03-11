@@ -32,15 +32,12 @@ export class EmailController {
     private readonly brevoMarketing: BrevoMarketingService,
   ) {}
 
-  // ======================
-  // Historique emails
-  // ======================
   @Get("contacts/:contactId")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
   @ApiOperation({
     summary:
-      "Historique des campagnes d’emails d’un contact (dérivé via ciblage + createdAt)",
+      "Historique des campagnes d’emails d’un contact (calculé via cursor/from)",
   })
   @ApiParam({ name: "contactId", type: String })
   @CheckAbilities({ action: "read", subject: "Email" })
@@ -48,23 +45,12 @@ export class EmailController {
     return this.emailService.getContactHistory(contactId);
   }
 
-  // ======================
-  // Webhook provider (Brevo)
-  // ======================
-  /**
-   * Webhook Brevo (pas de JWT, protégé par token en query)
-   * Configure Brevo webhook URL: https://.../emails/brevo/webhook?token=...
-   */
   @Post("brevo/webhook")
   @ApiOperation({ summary: "Webhook Brevo pour mise à jour des statuts" })
   @ApiQuery({ name: "token", required: true })
   brevoWebhook(@Query("token") token: string, @Body() body: unknown) {
     return this.emailService.handleBrevoWebhook(token, body);
   }
-
-  // ======================
-  // Marketing (façade API)
-  // ======================
 
   @Get("marketing/templates")
   @ApiBearerAuth("jwt")
@@ -82,36 +68,14 @@ export class EmailController {
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
   @ApiOperation({
-    summary: "Créer une campagne depuis un templateId + envoyer maintenant",
+    summary:
+      "Créer une campagne depuis un templateId + envoyer uniquement aux nouveaux contacts ciblés",
   })
   @CheckAbilities({ action: "create", subject: "Email" })
-  async sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
-    const result = await this.brevoMarketing.sendCampaignFromTemplate(dto);
-
-    const listIds = (result.listIds ?? [])
-      .map((x: any) => Number(x))
-      .filter((n: number) => Number.isFinite(n));
-
-    await this.emailService.recordBrevoCampaignSend({
-      brevoCampaignId: result.campaignId,
-      subject: result.subject,
-      recipients: result.recipients,
-      status: "queued",
-      listIds,
-      scheduledAt: result.scheduledAt
-        ? new Date(result.scheduledAt)
-        : undefined,
-    });
-
-    return {
-      campaignId: result.campaignId,
-      listIds: result.listIds,
-      scheduledAt: result.scheduledAt,
-      recipientsLogged: result.recipients.length,
-    };
+  sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
+    return this.emailService.sendMarketingCampaign(dto);
   }
 
-  // DB campagnes (remplace l'appel direct Brevo)
   @Get("marketing/campaigns")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
@@ -129,7 +93,6 @@ export class EmailController {
     });
   }
 
-  // getEmailInfo
   @Get("marketing/campaigns/:id")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)

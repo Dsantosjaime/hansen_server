@@ -91,8 +91,10 @@ model Contact {
 }
 
 type EmailSendSubGroup {
-  subGroupId   String @db.ObjectId
-  subGroupName String
+  subGroupId      String   @db.ObjectId
+  subGroupName    String
+  from            DateTime?
+  recipientsCount Int
 }
 
 type EmailSendGroup {
@@ -104,23 +106,32 @@ type EmailSendGroup {
 model EmailSend {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  // 1 doc par campagne provider
+  // 1 doc par campagne provider (run)
   brevoCampaignId String   @unique
+
+  // Pour pouvoir dédupliquer “nouveaux contacts” par template
+  templateId      Int
+
+  name            String?
   subject         String
   status          String
 
-  // Ciblage enregistré (pour affichage)
+  // Ciblage enregistré (pour affichage + historique)
   affected        EmailSendGroup[]
 
-  // Ciblage "plat" (pour filtres / historique contact)
+  // ciblage "plat" (requêtes rapides)
   affectedGroupIds    String[] @db.ObjectId
   affectedSubGroupIds String[] @db.ObjectId
 
   recipientsCount Int?
+  // listIds “logiques” (listes des sous-groupes ciblés, pour info)
   listIds         Int[]
+  // listId réellement utilisé pour l’envoi (temp)
+  tempListId      Int?
+
   scheduledAt     DateTime?
 
-  // timestamps globaux (pas par destinataire)
+  // timestamps globaux
   sentAt          DateTime?
   deliveredAt     DateTime?
   openedAt        DateTime?
@@ -133,6 +144,21 @@ model EmailSend {
 
   @@index([createdAt])
   @@index([status])
+  @@index([templateId])
+}
+
+model TemplateSubGroupCursor {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  templateId Int
+  subGroupId String   @db.ObjectId
+  lastSentAt DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([templateId, subGroupId])
+  @@index([templateId])
+  @@index([subGroupId])
 }
 
 model CampaignAttachment {
