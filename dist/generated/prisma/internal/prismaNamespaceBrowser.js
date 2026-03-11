@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryMode = exports.SortOrder = exports.EmailAddressTemplateScalarFieldEnum = exports.PluginParamScalarFieldEnum = exports.ToDoScalarFieldEnum = exports.CampaignAttachmentScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.QueryMode = exports.SortOrder = exports.EmailAddressTemplateScalarFieldEnum = exports.PluginParamScalarFieldEnum = exports.ToDoScalarFieldEnum = exports.CampaignAttachmentScalarFieldEnum = exports.TemplateSubGroupCursorScalarFieldEnum = exports.EmailSendScalarFieldEnum = exports.ContactScalarFieldEnum = exports.SubGroupScalarFieldEnum = exports.GroupScalarFieldEnum = exports.RoleScalarFieldEnum = exports.PermissionGroupScalarFieldEnum = exports.UserScalarFieldEnum = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -52,6 +52,7 @@ exports.ModelName = {
     SubGroup: 'SubGroup',
     Contact: 'Contact',
     EmailSend: 'EmailSend',
+    TemplateSubGroupCursor: 'TemplateSubGroupCursor',
     CampaignAttachment: 'CampaignAttachment',
     ToDo: 'ToDo',
     PluginParam: 'PluginParam',
@@ -103,12 +104,15 @@ exports.ContactScalarFieldEnum = {
 exports.EmailSendScalarFieldEnum = {
     id: 'id',
     brevoCampaignId: 'brevoCampaignId',
+    templateId: 'templateId',
+    name: 'name',
     subject: 'subject',
     status: 'status',
     affectedGroupIds: 'affectedGroupIds',
     affectedSubGroupIds: 'affectedSubGroupIds',
     recipientsCount: 'recipientsCount',
     listIds: 'listIds',
+    tempListId: 'tempListId',
     scheduledAt: 'scheduledAt',
     sentAt: 'sentAt',
     deliveredAt: 'deliveredAt',
@@ -116,6 +120,14 @@ exports.EmailSendScalarFieldEnum = {
     clickedAt: 'clickedAt',
     bouncedAt: 'bouncedAt',
     unsubscribedAt: 'unsubscribedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+exports.TemplateSubGroupCursorScalarFieldEnum = {
+    id: 'id',
+    templateId: 'templateId',
+    subGroupId: 'subGroupId',
+    lastSentAt: 'lastSentAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };

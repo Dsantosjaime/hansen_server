@@ -33,6 +33,7 @@ export declare const ModelName: {
     readonly SubGroup: "SubGroup";
     readonly Contact: "Contact";
     readonly EmailSend: "EmailSend";
+    readonly TemplateSubGroupCursor: "TemplateSubGroupCursor";
     readonly CampaignAttachment: "CampaignAttachment";
     readonly ToDo: "ToDo";
     readonly PluginParam: "PluginParam";
@@ -91,12 +92,15 @@ export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeo
 export declare const EmailSendScalarFieldEnum: {
     readonly id: "id";
     readonly brevoCampaignId: "brevoCampaignId";
+    readonly templateId: "templateId";
+    readonly name: "name";
     readonly subject: "subject";
     readonly status: "status";
     readonly affectedGroupIds: "affectedGroupIds";
     readonly affectedSubGroupIds: "affectedSubGroupIds";
     readonly recipientsCount: "recipientsCount";
     readonly listIds: "listIds";
+    readonly tempListId: "tempListId";
     readonly scheduledAt: "scheduledAt";
     readonly sentAt: "sentAt";
     readonly deliveredAt: "deliveredAt";
@@ -108,6 +112,15 @@ export declare const EmailSendScalarFieldEnum: {
     readonly updatedAt: "updatedAt";
 };
 export type EmailSendScalarFieldEnum = (typeof EmailSendScalarFieldEnum)[keyof typeof EmailSendScalarFieldEnum];
+export declare const TemplateSubGroupCursorScalarFieldEnum: {
+    readonly id: "id";
+    readonly templateId: "templateId";
+    readonly subGroupId: "subGroupId";
+    readonly lastSentAt: "lastSentAt";
+    readonly createdAt: "createdAt";
+    readonly updatedAt: "updatedAt";
+};
+export type TemplateSubGroupCursorScalarFieldEnum = (typeof TemplateSubGroupCursorScalarFieldEnum)[keyof typeof TemplateSubGroupCursorScalarFieldEnum];
 export declare const CampaignAttachmentScalarFieldEnum: {
     readonly id: "id";
     readonly token: "token";

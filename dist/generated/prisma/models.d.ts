@@ -9,6 +9,7 @@ export type * from './models/Group';
 export type * from './models/SubGroup';
 export type * from './models/Contact';
 export type * from './models/EmailSend';
+export type * from './models/TemplateSubGroupCursor';
 export type * from './models/CampaignAttachment';
 export type * from './models/ToDo';
 export type * from './models/PluginParam';

@@ -43,6 +43,9 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
     get emailSend(): Prisma.EmailSendDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
+    get templateSubGroupCursor(): Prisma.TemplateSubGroupCursorDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
     get campaignAttachment(): Prisma.CampaignAttachmentDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;

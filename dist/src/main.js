@@ -11,12 +11,16 @@ async function bootstrap() {
         transform: true,
         forbidNonWhitelisted: true,
     }));
+    const origins = [
+        process.env.CORS_ORIGINS,
+        process.env.CORS_ORIGINS_D,
+        process.env.CORS_ORIGINS_PLUGIN,
+    ]
+        .flatMap((v) => (v ? v.split(",") : []))
+        .map((s) => s.trim())
+        .filter(Boolean);
     app.enableCors({
-        origin: [
-            "https://app.localtest.me",
-            "https://app.localtest.me:8443",
-            "chrome-extension://jnplneoghhmipijoajpgcgdcaalibhbc",
-        ],
+        origin: origins,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Authorization", "Content-Type"],
         credentials: true,
