@@ -22,6 +22,7 @@ import { CheckAbilities } from "src/casl/check-abilities.decorator";
 import { ContactsService } from "./contacts.service";
 import { CreateContactDto } from "./dto/create-contact.dto";
 import { UpdateContactDto } from "./dto/update-contact.dto";
+import { ContactStatus } from "./type/contact-status.enum";
 
 @ApiTags("contacts")
 @ApiBearerAuth("jwt")
@@ -46,7 +47,7 @@ export class ContactsController {
   findAll(
     @Query("groupId") groupId?: string,
     @Query("subGroupId") subGroupId?: string,
-    @Query("status") status?: string,
+    @Query("status") status?: ContactStatus,
   ) {
     return this.contactsService.findAll({ groupId, subGroupId, status });
   }

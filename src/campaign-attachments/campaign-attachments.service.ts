@@ -29,7 +29,7 @@ export class CampaignAttachmentsService {
     await fs.writeFile(storedPath, file.buffer);
 
     return {
-      attachmentUrl: `${baseUrl}/campaign-attachments/${storedName}`,
+      attachmentUrl: `${baseUrl}/${storedName}`,
       filename: file.originalname,
       mimeType: file.mimetype,
       size: file.size,

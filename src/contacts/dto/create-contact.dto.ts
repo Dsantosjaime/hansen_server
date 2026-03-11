@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsEmail, IsString, MinLength } from "class-validator";
+import { IsArray, IsEmail, IsEnum, IsString, MinLength } from "class-validator";
+import { ContactStatus } from "../type/contact-status.enum";
 
 export class CreateContactDto {
   @ApiProperty({ example: "John" })
@@ -17,8 +18,8 @@ export class CreateContactDto {
   function!: string;
 
   @ApiProperty({ example: "Actif" })
-  @IsString()
-  status!: string;
+  @IsEnum(ContactStatus)
+  status!: ContactStatus;
 
   @ApiProperty({ example: "john.doe@company.com" })
   @IsEmail()

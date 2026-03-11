@@ -149,6 +149,23 @@ export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
   isSet?: boolean
 }
 
+export type EnumContactStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactStatus | Prisma.EnumContactStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactStatusFilter<$PrismaModel> | $Enums.ContactStatus
+}
+
+export type EnumContactStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactStatus | Prisma.EnumContactStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactStatusWithAggregatesFilter<$PrismaModel> | $Enums.ContactStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactStatusFilter<$PrismaModel>
+}
+
 export type IntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
@@ -389,6 +406,23 @@ export type NestedFloatNullableFilter<$PrismaModel = never> = {
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
   isSet?: boolean
+}
+
+export type NestedEnumContactStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactStatus | Prisma.EnumContactStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactStatusFilter<$PrismaModel> | $Enums.ContactStatus
+}
+
+export type NestedEnumContactStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactStatus | Prisma.EnumContactStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ContactStatus[] | Prisma.ListEnumContactStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumContactStatusWithAggregatesFilter<$PrismaModel> | $Enums.ContactStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactStatusFilter<$PrismaModel>
 }
 
 export type NestedDateTimeNullableFilter<$PrismaModel = never> = {

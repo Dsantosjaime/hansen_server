@@ -9,6 +9,16 @@
 * 🟢 You can import this file directly.
 */
 
+export const ContactStatus = {
+  NO_EXCHANGE: 'NO_EXCHANGE',
+  MET: 'MET',
+  CLIENT: 'CLIENT',
+  UNDESIRABLE: 'UNDESIRABLE'
+} as const
+
+export type ContactStatus = (typeof ContactStatus)[keyof typeof ContactStatus]
+
+
 export const ToDoType = {
   REMINDER: 'REMINDER',
   SERVICE: 'SERVICE'

@@ -73,12 +73,19 @@ model SubGroup {
   @@index([groupId])
 }
 
+enum ContactStatus {
+  NO_EXCHANGE
+  MET
+  CLIENT
+  UNDESIRABLE
+}
+
 model Contact {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
   firstName   String
   lastName    String
   function    String
-  status      String
+  status      ContactStatus @default(NO_EXCHANGE)
   email       String @unique
   phoneNumber String[]
   lastContact String

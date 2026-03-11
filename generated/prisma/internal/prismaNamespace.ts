@@ -1552,6 +1552,20 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'ContactStatus'
+ */
+export type EnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ContactStatus[]'
+ */
+export type ListEnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'ToDoType'
  */
 export type EnumToDoTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ToDoType'>

@@ -11,6 +11,7 @@ import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaN
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { SubGroupsService } from "@/subgroups/subgroups.service";
 import { Prisma } from "generated/prisma/client";
+import { ContactStatus } from "./type/contact-status.enum";
 
 @Injectable()
 export class ContactsService {
@@ -66,7 +67,7 @@ export class ContactsService {
           firstName: dto.firstName,
           lastName: dto.lastName,
           function: dto.function,
-          status: dto.status,
+          status: dto.status ?? ContactStatus.NO_EXCHANGE,
           email: dto.email,
           phoneNumber: dto.phoneNumber,
           lastContact: dto.lastContact,
@@ -97,7 +98,7 @@ export class ContactsService {
   async findAll(filters?: {
     groupId?: string;
     subGroupId?: string;
-    status?: string;
+    status?: ContactStatus;
   }) {
     return this.prisma.contact.findMany({
       where: {
@@ -196,7 +197,7 @@ export class ContactsService {
     firstName: string;
     lastName: string;
     function: string;
-    status: string;
+    status: ContactStatus;
     groupId: string;
     subGroupId: string;
   }) {
@@ -245,7 +246,7 @@ export class ContactsService {
   async findByGroupSubGroupPairs(
     input: {
       pairs: { groupId: string; subGroupId: string }[];
-      status?: string;
+      status?: ContactStatus;
     },
     options?: {
       select?: Prisma.ContactSelect;

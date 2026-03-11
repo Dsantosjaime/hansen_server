@@ -3,6 +3,7 @@ import { ContactsService } from "src/contacts/contacts.service";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { SubmitLinkedinScrapeDto } from "./dto/submit-linkedin-scrape.dto";
 import { SubGroupsService } from "@/subgroups/subgroups.service";
+import { ContactStatus } from "@/contacts/type/contact-status.enum";
 
 function normalizePart(s: string): string {
   return (s ?? "")
@@ -150,7 +151,7 @@ export class ScrapService {
         firstName: c.firstName,
         lastName: c.lastName,
         function: c.fn,
-        status: "ACTIF",
+        status: ContactStatus.NO_EXCHANGE,
       });
 
       processed++;
