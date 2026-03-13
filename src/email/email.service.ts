@@ -144,167 +144,155 @@ export class EmailService {
    * Retourne une réponse compatible avec l'existant.
    */
   async sendMarketingCampaign(dto: ScheduleSendCampaignDto) {
-    try {
-      if (dto.scheduledAt) {
-        throw new BadRequestException("Scheduled is not supported yet.");
-      }
+    if (dto.scheduledAt) {
+      throw new BadRequestException("Scheduled is not supported yet.");
+    }
 
-      // 1) subGroupIds ciblés
-      const targetSubGroupIds = await this.resolveTargetSubGroupIds(dto);
-      if (!targetSubGroupIds.length) {
-        throw new NotFoundException("Empty selection (no subGroups resolved).");
-      }
+    // 1) subGroupIds ciblés
+    const targetSubGroupIds = await this.resolveTargetSubGroupIds(dto);
+    if (!targetSubGroupIds.length) {
+      throw new NotFoundException("Empty selection (no subGroups resolved).");
+    }
 
-      // 2) listIds “logiques” des sous-groupes (on les garde pour ne pas casser le retour)
-      const logicalListIds = await this.brevoMarketing.resolveBrevoListIds({
-        groupIds: dto.groupIds,
-        subGroupIds: dto.subGroupIds,
-      });
+    // 2) listIds “logiques” des sous-groupes (on les garde pour ne pas casser le retour)
+    const logicalListIds = await this.brevoMarketing.resolveBrevoListIds({
+      groupIds: dto.groupIds,
+      subGroupIds: dto.subGroupIds,
+    });
 
-      // 3) Récupère le template (subject)
-      const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
-      const subject = tpl.subject ?? "(no subject)";
+    // 3) Récupère le template (subject)
+    const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
+    const subject = tpl.subject ?? "(no subject)";
 
-      // 4) Récupère les cursors existants
-      const cursors = await this.prisma.templateSubGroupCursor.findMany({
-        where: {
-          templateId: dto.templateId,
-          subGroupId: { in: targetSubGroupIds },
-        },
-        select: { subGroupId: true, lastSentAt: true },
-      });
+    // 4) Récupère les cursors existants
+    const cursors = await this.prisma.templateSubGroupCursor.findMany({
+      where: {
+        templateId: dto.templateId,
+        subGroupId: { in: targetSubGroupIds },
+      },
+      select: { subGroupId: true, lastSentAt: true },
+    });
 
-      const lastSentAtBySubGroupId = new Map<string, Date>();
-      for (const c of cursors)
-        lastSentAtBySubGroupId.set(c.subGroupId, c.lastSentAt);
+    const lastSentAtBySubGroupId = new Map<string, Date>();
+    for (const c of cursors)
+      lastSentAtBySubGroupId.set(c.subGroupId, c.lastSentAt);
 
-      // from = lastSentAt (moment T-1) à stocker dans EmailSend
-      const fromBySubGroupId = new Map<string, Date | null>();
-      for (const sgId of targetSubGroupIds) {
-        fromBySubGroupId.set(sgId, lastSentAtBySubGroupId.get(sgId) ?? null);
-      }
+    // from = lastSentAt (moment T-1) à stocker dans EmailSend
+    const fromBySubGroupId = new Map<string, Date | null>();
+    for (const sgId of targetSubGroupIds) {
+      fromBySubGroupId.set(sgId, lastSentAtBySubGroupId.get(sgId) ?? null);
+    }
 
-      // 5) Requête "éligibles" en une fois (OR par sous-groupe, avec createdAt > lastSentAt)
-      const or: Prisma.ContactWhereInput[] = targetSubGroupIds.map((sgId) => {
-        const last = lastSentAtBySubGroupId.get(sgId);
-        return {
-          subGroupId: sgId,
-          ...(last ? { createdAt: { gt: last } } : {}),
-        };
-      });
+    // 5) Requête "éligibles" en une fois (OR par sous-groupe, avec createdAt > lastSentAt)
+    const or: Prisma.ContactWhereInput[] = targetSubGroupIds.map((sgId) => {
+      const last = lastSentAtBySubGroupId.get(sgId);
+      return {
+        subGroupId: sgId,
+        ...(last ? { createdAt: { gt: last } } : {}),
+      };
+    });
 
-      const eligibleContacts = await this.prisma.contact.findMany({
-        where: { OR: or },
-        select: {
-          id: true,
-          email: true,
-          subGroupId: true,
-          groupId: true,
-          createdAt: true,
-        },
-      });
+    const eligibleContacts = await this.prisma.contact.findMany({
+      where: { OR: or },
+      select: {
+        id: true,
+        email: true,
+        subGroupId: true,
+        groupId: true,
+        createdAt: true,
+      },
+    });
 
-      if (!eligibleContacts.length) {
-        throw new BadRequestException(
-          "No new recipients for this template and selection.",
-        );
-      }
-
-      // 6) Comptage par sous-groupe
-      const countBySubGroupId = new Map<string, number>();
-      for (const c of eligibleContacts) {
-        countBySubGroupId.set(
-          c.subGroupId,
-          (countBySubGroupId.get(c.subGroupId) ?? 0) + 1,
-        );
-      }
-
-      // 7) Liste temporaire Brevo
-      const now = new Date();
-      const tmpLabel = `TMP:T${dto.templateId}:${now.toISOString()}`;
-      const tempListId =
-        await this.brevoMarketing.createTemporaryList(tmpLabel);
-
-      // 8) Upsert des éligibles dans la liste temp
-      await this.brevoMarketing.bulkUpsertContactsToList(
-        tempListId,
-        eligibleContacts.map((c) => ({ email: c.email, attributes: {} })),
+    if (!eligibleContacts.length) {
+      throw new BadRequestException(
+        "No new recipients for this template and selection.",
       );
+    }
 
-      // 9) Création + envoi campagne vers la liste temp
-      const attachmentUrl =
-        dto.attachmentUrl && dto.attachmentUrl.trim().length > 0
-          ? dto.attachmentUrl.trim()
-          : undefined;
+    // 6) Comptage par sous-groupe
+    const countBySubGroupId = new Map<string, number>();
+    for (const c of eligibleContacts) {
+      countBySubGroupId.set(
+        c.subGroupId,
+        (countBySubGroupId.get(c.subGroupId) ?? 0) + 1,
+      );
+    }
 
-      const { campaignId } =
-        await this.brevoMarketing.createAndSendCampaignFromTemplateToLists({
-          templateId: dto.templateId,
-          name: dto.name ?? `Campaign from template ${dto.templateId}`,
-          subject,
-          listIds: [tempListId],
-          attachmentUrl,
-        });
+    // 7) Liste temporaire Brevo
+    const now = new Date();
+    const tmpLabel = `TMP:T${dto.templateId}:${now.toISOString()}`;
+    const tempListId = await this.brevoMarketing.createTemporaryList(tmpLabel);
 
-      // 10) Enregistre EmailSend (run)
-      const targeting = await this.buildAffected({
-        subGroupIds: targetSubGroupIds,
-        fromBySubGroupId,
-        countBySubGroupId,
+    // 8) Upsert des éligibles dans la liste temp
+    await this.brevoMarketing.bulkUpsertContactsToList(
+      tempListId,
+      eligibleContacts.map((c) => ({ email: c.email, attributes: {} })),
+    );
+
+    // 9) Création + envoi campagne vers la liste temp
+    const attachmentUrl =
+      dto.attachmentUrl && dto.attachmentUrl.trim().length > 0
+        ? dto.attachmentUrl.trim()
+        : undefined;
+
+    const { campaignId } =
+      await this.brevoMarketing.createAndSendCampaignFromTemplateToLists({
+        templateId: dto.templateId,
+        name: dto.name ?? `Campaign from template ${dto.templateId}`,
+        subject,
+        listIds: [tempListId],
+        attachmentUrl,
       });
 
-      await this.prisma.emailSend.create({
-        data: {
-          brevoCampaignId: String(campaignId),
-          templateId: dto.templateId,
-          name: dto.name ?? null,
-          subject,
-          status: "queued",
-          affected: targeting.affected,
-          affectedGroupIds: targeting.affectedGroupIds,
-          affectedSubGroupIds: targeting.affectedSubGroupIds,
-          recipientsCount: eligibleContacts.length,
-          listIds: logicalListIds,
-          tempListId,
-          scheduledAt: null,
-        },
-      });
+    // 10) Enregistre EmailSend (run)
+    const targeting = await this.buildAffected({
+      subGroupIds: targetSubGroupIds,
+      fromBySubGroupId,
+      countBySubGroupId,
+    });
 
-      // 11) Update cursors (lastSentAt = now) pour tous les sous-groupes ciblés
-      for (const sgId of targetSubGroupIds) {
-        await this.prisma.templateSubGroupCursor.upsert({
-          where: {
-            templateId_subGroupId: {
-              templateId: dto.templateId,
-              subGroupId: sgId,
-            },
-          },
-          create: {
+    await this.prisma.emailSend.create({
+      data: {
+        brevoCampaignId: String(campaignId),
+        templateId: dto.templateId,
+        name: dto.name ?? null,
+        subject,
+        status: "queued",
+        affected: targeting.affected,
+        affectedGroupIds: targeting.affectedGroupIds,
+        affectedSubGroupIds: targeting.affectedSubGroupIds,
+        recipientsCount: eligibleContacts.length,
+        listIds: logicalListIds,
+        tempListId,
+        scheduledAt: null,
+      },
+    });
+
+    // 11) Update cursors (lastSentAt = now) pour tous les sous-groupes ciblés
+    for (const sgId of targetSubGroupIds) {
+      await this.prisma.templateSubGroupCursor.upsert({
+        where: {
+          templateId_subGroupId: {
             templateId: dto.templateId,
             subGroupId: sgId,
-            lastSentAt: now,
           },
-          update: { lastSentAt: now },
-        });
-      }
-
-      // 12) Réponse compatible
-      return {
-        campaignId,
-        listIds: logicalListIds,
-        scheduledAt: null,
-        recipientsLogged: eligibleContacts.length,
-      };
-    } catch (e: any) {
-      // axios: e.response?.data contient le message Brevo
-      throw new BadRequestException({
-        message: "Brevo error",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        brevoStatus: e?.response?.status,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        brevoData: e?.response?.data,
+        },
+        create: {
+          templateId: dto.templateId,
+          subGroupId: sgId,
+          lastSentAt: now,
+        },
+        update: { lastSentAt: now },
       });
     }
+
+    // 12) Réponse compatible
+    return {
+      campaignId,
+      listIds: logicalListIds,
+      scheduledAt: null,
+      recipientsLogged: eligibleContacts.length,
+    };
   }
 
   /**
