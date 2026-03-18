@@ -41,6 +41,21 @@ export class BrevoMarketingService {
     );
   }
 
+  /**
+   * Senders (From): exposés pour UsersService / RoleService
+   */
+  async createSender(args: { name: string; email: string }): Promise<number> {
+    const created = await this.brevo.createSender(args);
+    const id = Number(created.id);
+    if (!id)
+      throw new InternalServerErrorException("Brevo did not return sender id");
+    return id;
+  }
+
+  async deleteSender(senderId: number): Promise<void> {
+    await this.brevo.deleteSender(senderId);
+  }
+
   async listTemplateCampaigns(): Promise<EmailTemplateDto[]> {
     const templates = await this.brevo.listEmailTemplates({
       limit: 100,
@@ -127,7 +142,7 @@ export class BrevoMarketingService {
 
   /**
    * Crée une campagne depuis un template, ciblée sur DES listIds donnés, puis envoi immédiat
-   * (Contrairement à l'ancienne méthode, ici on ne résout pas la sélection)
+   * Permet de surcharger sender/replyTo (ex: sender = user courant).
    */
   async createAndSendCampaignFromTemplateToLists(args: {
     templateId: number;
@@ -135,6 +150,9 @@ export class BrevoMarketingService {
     subject: string;
     listIds: number[];
     attachmentUrl?: string;
+
+    senderOverride?: { name: string; email: string };
+    replyToOverride?: string;
   }): Promise<{ campaignId: number }> {
     if (!args.listIds.length) {
       throw new NotFoundException("No target lists (empty listIds).");
@@ -142,10 +160,14 @@ export class BrevoMarketingService {
 
     const created = await this.brevo.createCampaignFromTemplate({
       name: args.name,
-      sender: { name: this.senderName, email: this.senderEmail },
+      sender: args.senderOverride ?? {
+        name: this.senderName,
+        email: this.senderEmail,
+      },
       listIds: args.listIds,
       templateId: args.templateId,
       subject: args.subject,
+      ...(args.replyToOverride ? { replyTo: args.replyToOverride } : {}),
       ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
     });
 

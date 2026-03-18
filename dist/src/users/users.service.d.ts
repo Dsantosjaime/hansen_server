@@ -2,6 +2,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import type { KeycloakJwtPayload } from "src/auth/keycloack-user.type";
 import { Prisma } from "generated/prisma/client";
 import { KeycloakAdminUsersService } from "src/keycloak/users.services";
+import { BrevoMarketingService } from "src/brevo/brevo-marketing.service";
 export type UserWithRole = Prisma.UserGetPayload<{
     include: {
         role: true;
@@ -16,8 +17,13 @@ type UpdateUserInput = {
 export declare class UsersService {
     private readonly prisma;
     private readonly keycloakAdminUsers;
-    constructor(prisma: PrismaService, keycloakAdminUsers: KeycloakAdminUsersService);
+    private readonly brevoMarketing;
+    constructor(prisma: PrismaService, keycloakAdminUsers: KeycloakAdminUsersService, brevoMarketing: BrevoMarketingService);
     private safeDeleteKeycloakUser;
+    private canCreateEmail;
+    private ensureBrevoSenderForUserId;
+    private removeBrevoSenderForUserId;
+    private handleEmailChangeIfNeeded;
     getUsers(): Promise<UserWithRole[]>;
     createUserWithRole(name: string, temporaryPassword: string, roleId: string, email: string): Promise<UserWithRole>;
     updateUser(userId: string, input: UpdateUserInput): Promise<UserWithRole>;

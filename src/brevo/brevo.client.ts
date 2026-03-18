@@ -26,6 +26,8 @@ export type BrevoCreateCampaignFromTemplateInput = {
   // On le met explicitement pour être robuste (au lieu de supposer que Brevo copie le subject)
   subject: string;
 
+  // Optional
+  replyTo?: string;
   scheduledAt?: string;
   attachmentUrl?: string;
 };
@@ -63,4 +65,8 @@ export interface BrevoClient {
     sort?: "asc" | "desc";
     type?: "classic" | "trigger";
   }): Promise<BrevoEmailCampaign[]>;
+
+  // Senders (From)
+  createSender(args: { name: string; email: string }): Promise<{ id: number }>;
+  deleteSender(senderId: number): Promise<void>;
 }

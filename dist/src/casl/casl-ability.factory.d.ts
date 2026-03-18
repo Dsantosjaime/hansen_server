@@ -1,7 +1,6 @@
-import { MongoAbility } from '@casl/ability';
-import type { Permission } from 'generated/prisma/client';
-export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete' | 'copy';
-export type Subjects = 'all' | 'Post' | 'User' | 'Role';
+import { MongoAbility } from "@casl/ability";
+import type { Permission } from "generated/prisma/client";
+import type { Actions, Subjects } from "./casl.types";
 export type AppAbility = MongoAbility<[Actions, Subjects]>;
 export declare class CaslAbilityFactory {
     createFor(user: {

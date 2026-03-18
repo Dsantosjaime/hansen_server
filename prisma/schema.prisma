@@ -24,6 +24,8 @@ model User {
   roleId     String? @db.ObjectId
   role       Role?   @relation(fields: [roleId], references: [id])
 
+  brevoSenderId Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

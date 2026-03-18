@@ -47,15 +47,17 @@ export class CaslGuard implements CanActivate {
 
     const ability = this.caslAbilityFactory.createFor({
       isSuperAdmin,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      permissions: dbUser?.role?.permissions,
+      permissions: dbUser.role.permissions,
     });
 
+    console.log("check", required, dbUser.role.permissions);
+
     for (const r of required) {
-      if (!ability.can(r.action as any, r.subject as any)) {
+      if (!ability.can(r.action, r.subject)) {
         throw new ForbiddenException("Forbidden by CASL");
       }
     }
+
     req.dbUser = dbUser;
     return true;
   }

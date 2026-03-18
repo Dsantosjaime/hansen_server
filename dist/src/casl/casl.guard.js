@@ -41,8 +41,9 @@ let CaslGuard = class CaslGuard {
         const isSuperAdmin = realmRoles.includes("super_admin");
         const ability = this.caslAbilityFactory.createFor({
             isSuperAdmin,
-            permissions: dbUser?.role?.permissions,
+            permissions: dbUser.role.permissions,
         });
+        console.log("check", required, dbUser.role.permissions);
         for (const r of required) {
             if (!ability.can(r.action, r.subject)) {
                 throw new common_1.ForbiddenException("Forbidden by CASL");

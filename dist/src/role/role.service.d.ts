@@ -1,9 +1,11 @@
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateRoleDto } from "./dto/create-role.dto";
+import { UpdateRoleDto } from "./dto/update-role.dto";
+import { BrevoMarketingService } from "src/brevo/brevo-marketing.service";
 export declare class RoleService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly brevoMarketing;
+    constructor(prisma: PrismaService, brevoMarketing: BrevoMarketingService);
     create(dto: CreateRoleDto): Promise<{
         name: string;
         id: string;

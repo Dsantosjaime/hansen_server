@@ -8,6 +8,7 @@ import {
   ContactsApi,
   EmailCampaignsApi,
   TransactionalEmailsApi,
+  SendersApi,
 } from "@getbrevo/brevo";
 
 import { BREVO_CLIENT } from "./brevo.constants";
@@ -44,22 +45,18 @@ export const brevoClientProvider: Provider = {
     const contactsApi = new ContactsApi(basePath);
     const emailCampaignsApi = new EmailCampaignsApi(basePath);
     const transactionalApi = new TransactionalEmailsApi(basePath);
+    const sendersApi = new SendersApi(basePath);
 
     setApiKeyOnApiInstance(contactsApi, apiKey);
     setApiKeyOnApiInstance(emailCampaignsApi, apiKey);
     setApiKeyOnApiInstance(transactionalApi, apiKey);
+    setApiKeyOnApiInstance(sendersApi, apiKey);
 
     const client: BrevoClient = {
-      /**
-       * Templates: on utilise l’API Transactional templates (SMTP templates).
-       * L’utilisateur gère ses templates dans Brevo, on récupère id/name/subject/isActive.
-       */
       async listEmailTemplates({
         limit,
         offset,
       }): Promise<BrevoEmailTemplate[]> {
-        // getSmtpTemplates(templateStatus, limit, offset, sort)
-        // Les signatures exactes peuvent varier, donc on unwrap + map.
         const res = await (transactionalApi as any).getSmtpTemplates(
           true,
           limit,
@@ -78,7 +75,6 @@ export const brevoClientProvider: Provider = {
       },
 
       async getEmailTemplate(templateId: number): Promise<BrevoEmailTemplate> {
-        // getSmtpTemplate(templateId)
         const res = await (transactionalApi as any).getSmtpTemplate(
           String(templateId),
         );
@@ -92,10 +88,6 @@ export const brevoClientProvider: Provider = {
         };
       },
 
-      /**
-       * Crée une campagne marketing à partir d’un templateId.
-       * On passe explicitement subject + recipients.listIds.
-       */
       async createCampaignFromTemplate(
         input: BrevoCreateCampaignFromTemplateInput,
       ): Promise<{ id: number }> {
@@ -105,10 +97,8 @@ export const brevoClientProvider: Provider = {
           sender: input.sender,
           type: "classic",
           recipients: { listIds: input.listIds },
-
-          // clé: création depuis templateId
           templateId: input.templateId,
-
+          ...(input.replyTo ? { replyTo: input.replyTo } : {}),
           ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
           ...(input.attachmentUrl
             ? { attachmentUrl: input.attachmentUrl }
@@ -121,7 +111,6 @@ export const brevoClientProvider: Provider = {
       },
 
       async sendCampaignNow(campaignId: number): Promise<void> {
-        // Workaround SDK: parfois le SDK met l’id en body -> string évite axios crash
         const id = String(campaignId);
         await (emailCampaignsApi as any).sendEmailCampaignNow(id);
       },
@@ -156,7 +145,6 @@ export const brevoClientProvider: Provider = {
           updateEnabled: true,
         };
 
-        // Upsert côté Brevo: createContact + updateEnabled=true
         await contactsApi.createContact(payload);
       },
 
@@ -170,8 +158,6 @@ export const brevoClientProvider: Provider = {
         sort = "desc",
         type = "classic",
       }): Promise<BrevoEmailCampaign[]> {
-        // Signature SDK variable selon versions => on passe via any + unwrapBody
-        // getEmailCampaigns(type, status, startDate, endDate, limit, offset, sort)
         const res = await emailCampaignsApi.getEmailCampaigns(
           type,
           undefined,
@@ -195,6 +181,22 @@ export const brevoClientProvider: Provider = {
           createdAt: (c.createdAt ?? null) as string | null,
           modifiedAt: (c.modifiedAt ?? null) as string | null,
         }));
+      },
+
+      async createSender(args: {
+        name: string;
+        email: string;
+      }): Promise<{ id: number }> {
+        const res = await (sendersApi as any).createSender({
+          name: args.name,
+          email: args.email,
+        });
+        const data = unwrapBody<any>(res);
+        return { id: toNumber(data?.id) };
+      },
+
+      async deleteSender(senderId: number): Promise<void> {
+        await (sendersApi as any).deleteSender(String(senderId));
       },
     };
 

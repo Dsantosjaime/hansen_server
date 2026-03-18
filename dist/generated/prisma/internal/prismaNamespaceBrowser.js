@@ -64,6 +64,7 @@ exports.UserScalarFieldEnum = {
     email: 'email',
     name: 'name',
     roleId: 'roleId',
+    brevoSenderId: 'brevoSenderId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
 };

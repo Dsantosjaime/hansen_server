@@ -9,26 +9,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CaslAbilityFactory = void 0;
 const common_1 = require("@nestjs/common");
 const ability_1 = require("@casl/ability");
-const ALLOWED_ACTIONS = [
-    'manage',
-    'create',
-    'read',
-    'update',
-    'delete',
-    'copy',
-];
-const ALLOWED_SUBJECTS = ['all', 'Post', 'User', 'Role'];
+const casl_types_1 = require("./casl.types");
+const ALLOWED_ACTIONS = casl_types_1.ACTIONS;
+const ALLOWED_SUBJECTS = casl_types_1.SUBJECTS;
 function isAllowedAction(a) {
-    return ALLOWED_ACTIONS.includes(a);
+    return (typeof a === "string" && ALLOWED_ACTIONS.includes(a));
 }
 function isAllowedSubject(s) {
-    return ALLOWED_SUBJECTS.includes(s);
+    return (typeof s === "string" && ALLOWED_SUBJECTS.includes(s));
 }
 let CaslAbilityFactory = class CaslAbilityFactory {
     createFor(user) {
         const { can, build } = new ability_1.AbilityBuilder(ability_1.createMongoAbility);
         if (user.isSuperAdmin) {
-            can('manage', 'all');
+            can("manage", "all");
             return build();
         }
         for (const perm of user.permissions ?? []) {

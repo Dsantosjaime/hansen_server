@@ -1,38 +1,29 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 import {
   AbilityBuilder,
   createMongoAbility,
   MongoAbility,
-} from '@casl/ability';
-import type { Permission } from 'generated/prisma/client';
+} from "@casl/ability";
+import type { Permission } from "generated/prisma/client";
 
-export type Actions =
-  | 'manage'
-  | 'create'
-  | 'read'
-  | 'update'
-  | 'delete'
-  | 'copy';
-export type Subjects = 'all' | 'Post' | 'User' | 'Role';
+import { ACTIONS, SUBJECTS } from "./casl.types";
+import type { Actions, Subjects } from "./casl.types";
+
 export type AppAbility = MongoAbility<[Actions, Subjects]>;
 
-const ALLOWED_ACTIONS: Actions[] = [
-  'manage',
-  'create',
-  'read',
-  'update',
-  'delete',
-  'copy',
-];
-const ALLOWED_SUBJECTS: Subjects[] = ['all', 'Post', 'User', 'Role'];
+const ALLOWED_ACTIONS = ACTIONS;
+const ALLOWED_SUBJECTS = SUBJECTS;
 
-function isAllowedAction(a: string): a is Actions {
-  return ALLOWED_ACTIONS.includes(a as Actions);
+function isAllowedAction(a: unknown): a is Actions {
+  return (
+    typeof a === "string" && (ALLOWED_ACTIONS as readonly string[]).includes(a)
+  );
 }
-function isAllowedSubject(s: string): s is Subjects {
-  return ALLOWED_SUBJECTS.includes(s as Subjects);
+
+function isAllowedSubject(s: unknown): s is Subjects {
+  return (
+    typeof s === "string" && (ALLOWED_SUBJECTS as readonly string[]).includes(s)
+  );
 }
 
 @Injectable()
@@ -44,7 +35,7 @@ export class CaslAbilityFactory {
     const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
     if (user.isSuperAdmin) {
-      can('manage', 'all');
+      can("manage", "all");
       return build();
     }
 

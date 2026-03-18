@@ -3,8 +3,16 @@ import type * as Prisma from "../internal/prismaNamespace";
 export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayload>;
 export type AggregateUser = {
     _count: UserCountAggregateOutputType | null;
+    _avg: UserAvgAggregateOutputType | null;
+    _sum: UserSumAggregateOutputType | null;
     _min: UserMinAggregateOutputType | null;
     _max: UserMaxAggregateOutputType | null;
+};
+export type UserAvgAggregateOutputType = {
+    brevoSenderId: number | null;
+};
+export type UserSumAggregateOutputType = {
+    brevoSenderId: number | null;
 };
 export type UserMinAggregateOutputType = {
     id: string | null;
@@ -12,6 +20,7 @@ export type UserMinAggregateOutputType = {
     email: string | null;
     name: string | null;
     roleId: string | null;
+    brevoSenderId: number | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -21,6 +30,7 @@ export type UserMaxAggregateOutputType = {
     email: string | null;
     name: string | null;
     roleId: string | null;
+    brevoSenderId: number | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -30,9 +40,16 @@ export type UserCountAggregateOutputType = {
     email: number;
     name: number;
     roleId: number;
+    brevoSenderId: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
+};
+export type UserAvgAggregateInputType = {
+    brevoSenderId?: true;
+};
+export type UserSumAggregateInputType = {
+    brevoSenderId?: true;
 };
 export type UserMinAggregateInputType = {
     id?: true;
@@ -40,6 +57,7 @@ export type UserMinAggregateInputType = {
     email?: true;
     name?: true;
     roleId?: true;
+    brevoSenderId?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -49,6 +67,7 @@ export type UserMaxAggregateInputType = {
     email?: true;
     name?: true;
     roleId?: true;
+    brevoSenderId?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -58,6 +77,7 @@ export type UserCountAggregateInputType = {
     email?: true;
     name?: true;
     roleId?: true;
+    brevoSenderId?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -69,6 +89,8 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
     take?: number;
     skip?: number;
     _count?: true | UserCountAggregateInputType;
+    _avg?: UserAvgAggregateInputType;
+    _sum?: UserSumAggregateInputType;
     _min?: UserMinAggregateInputType;
     _max?: UserMaxAggregateInputType;
 };
@@ -83,6 +105,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
     take?: number;
     skip?: number;
     _count?: UserCountAggregateInputType | true;
+    _avg?: UserAvgAggregateInputType;
+    _sum?: UserSumAggregateInputType;
     _min?: UserMinAggregateInputType;
     _max?: UserMaxAggregateInputType;
 };
@@ -92,9 +116,12 @@ export type UserGroupByOutputType = {
     email: string | null;
     name: string | null;
     roleId: string | null;
+    brevoSenderId: number | null;
     createdAt: Date;
     updatedAt: Date;
     _count: UserCountAggregateOutputType | null;
+    _avg: UserAvgAggregateOutputType | null;
+    _sum: UserSumAggregateOutputType | null;
     _min: UserMinAggregateOutputType | null;
     _max: UserMaxAggregateOutputType | null;
 };
@@ -110,6 +137,7 @@ export type UserWhereInput = {
     email?: Prisma.StringNullableFilter<"User"> | string | null;
     name?: Prisma.StringNullableFilter<"User"> | string | null;
     roleId?: Prisma.StringNullableFilter<"User"> | string | null;
+    brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null;
@@ -120,6 +148,7 @@ export type UserOrderByWithRelationInput = {
     email?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     roleId?: Prisma.SortOrder;
+    brevoSenderId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     role?: Prisma.RoleOrderByWithRelationInput;
@@ -133,6 +162,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     email?: Prisma.StringNullableFilter<"User"> | string | null;
     name?: Prisma.StringNullableFilter<"User"> | string | null;
     roleId?: Prisma.StringNullableFilter<"User"> | string | null;
+    brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null;
@@ -143,11 +173,14 @@ export type UserOrderByWithAggregationInput = {
     email?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     roleId?: Prisma.SortOrder;
+    brevoSenderId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.UserCountOrderByAggregateInput;
+    _avg?: Prisma.UserAvgOrderByAggregateInput;
     _max?: Prisma.UserMaxOrderByAggregateInput;
     _min?: Prisma.UserMinOrderByAggregateInput;
+    _sum?: Prisma.UserSumOrderByAggregateInput;
 };
 export type UserScalarWhereWithAggregatesInput = {
     AND?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
@@ -158,6 +191,7 @@ export type UserScalarWhereWithAggregatesInput = {
     email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     roleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
+    brevoSenderId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
 };
@@ -166,6 +200,7 @@ export type UserCreateInput = {
     keycloakId: string;
     email?: string | null;
     name?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
     role?: Prisma.RoleCreateNestedOneWithoutUsersInput;
@@ -176,6 +211,7 @@ export type UserUncheckedCreateInput = {
     email?: string | null;
     name?: string | null;
     roleId?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -183,6 +219,7 @@ export type UserUpdateInput = {
     keycloakId?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     role?: Prisma.RoleUpdateOneWithoutUsersNestedInput;
@@ -192,6 +229,7 @@ export type UserUncheckedUpdateInput = {
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -201,6 +239,7 @@ export type UserCreateManyInput = {
     email?: string | null;
     name?: string | null;
     roleId?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -208,6 +247,7 @@ export type UserUpdateManyMutationInput = {
     keycloakId?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -216,6 +256,7 @@ export type UserUncheckedUpdateManyInput = {
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -225,8 +266,12 @@ export type UserCountOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     roleId?: Prisma.SortOrder;
+    brevoSenderId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+};
+export type UserAvgOrderByAggregateInput = {
+    brevoSenderId?: Prisma.SortOrder;
 };
 export type UserMaxOrderByAggregateInput = {
     id?: Prisma.SortOrder;
@@ -234,6 +279,7 @@ export type UserMaxOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     roleId?: Prisma.SortOrder;
+    brevoSenderId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -243,8 +289,12 @@ export type UserMinOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     name?: Prisma.SortOrder;
     roleId?: Prisma.SortOrder;
+    brevoSenderId?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+};
+export type UserSumOrderByAggregateInput = {
+    brevoSenderId?: Prisma.SortOrder;
 };
 export type UserListRelationFilter = {
     every?: Prisma.UserWhereInput;
@@ -259,6 +309,14 @@ export type StringFieldUpdateOperationsInput = {
 };
 export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null;
+    unset?: boolean;
+};
+export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null;
+    increment?: number;
+    decrement?: number;
+    multiply?: number;
+    divide?: number;
     unset?: boolean;
 };
 export type DateTimeFieldUpdateOperationsInput = {
@@ -307,6 +365,7 @@ export type UserCreateWithoutRoleInput = {
     keycloakId: string;
     email?: string | null;
     name?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -315,6 +374,7 @@ export type UserUncheckedCreateWithoutRoleInput = {
     keycloakId: string;
     email?: string | null;
     name?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -347,6 +407,7 @@ export type UserScalarWhereInput = {
     email?: Prisma.StringNullableFilter<"User"> | string | null;
     name?: Prisma.StringNullableFilter<"User"> | string | null;
     roleId?: Prisma.StringNullableFilter<"User"> | string | null;
+    brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
 };
@@ -355,6 +416,7 @@ export type UserCreateManyRoleInput = {
     keycloakId: string;
     email?: string | null;
     name?: string | null;
+    brevoSenderId?: number | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
@@ -362,6 +424,7 @@ export type UserUpdateWithoutRoleInput = {
     keycloakId?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -369,6 +432,7 @@ export type UserUncheckedUpdateWithoutRoleInput = {
     keycloakId?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -376,6 +440,7 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
     keycloakId?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -385,6 +450,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     email?: boolean;
     name?: boolean;
     roleId?: boolean;
+    brevoSenderId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
     role?: boolean | Prisma.User$roleArgs<ExtArgs>;
@@ -395,10 +461,11 @@ export type UserSelectScalar = {
     email?: boolean;
     name?: boolean;
     roleId?: boolean;
+    brevoSenderId?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "keycloakId" | "email" | "name" | "roleId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "keycloakId" | "email" | "name" | "roleId" | "brevoSenderId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     role?: boolean | Prisma.User$roleArgs<ExtArgs>;
 };
@@ -413,6 +480,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
         email: string | null;
         name: string | null;
         roleId: string | null;
+        brevoSenderId: number | null;
         createdAt: Date;
         updatedAt: Date;
     }, ExtArgs["result"]["user"]>;
@@ -478,6 +546,7 @@ export interface UserFieldRefs {
     readonly email: Prisma.FieldRef<"User", 'String'>;
     readonly name: Prisma.FieldRef<"User", 'String'>;
     readonly roleId: Prisma.FieldRef<"User", 'String'>;
+    readonly brevoSenderId: Prisma.FieldRef<"User", 'Int'>;
     readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>;
 }

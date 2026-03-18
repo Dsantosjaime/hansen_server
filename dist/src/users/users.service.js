@@ -14,17 +14,90 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const prismaNamespace_1 = require("../../generated/prisma/internal/prismaNamespace");
 const users_services_1 = require("../keycloak/users.services");
+const brevo_marketing_service_1 = require("../brevo/brevo-marketing.service");
+const permissions_util_1 = require("../auth/permissions.util");
 let UsersService = class UsersService {
     prisma;
     keycloakAdminUsers;
-    constructor(prisma, keycloakAdminUsers) {
+    brevoMarketing;
+    constructor(prisma, keycloakAdminUsers, brevoMarketing) {
         this.prisma = prisma;
         this.keycloakAdminUsers = keycloakAdminUsers;
+        this.brevoMarketing = brevoMarketing;
     }
     async safeDeleteKeycloakUser(keycloakUserId) {
         await this.keycloakAdminUsers
             .deleteUser(keycloakUserId)
             .catch(() => undefined);
+    }
+    canCreateEmail(user) {
+        return (0, permissions_util_1.hasPermission)(user.role, "Email", "create");
+    }
+    async ensureBrevoSenderForUserId(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: { role: true },
+        });
+        if (!user)
+            throw new common_1.NotFoundException(`User ${userId} not found`);
+        if (!this.canCreateEmail(user))
+            return;
+        if (!user.email) {
+            throw new Error("User email is required to create a Brevo sender");
+        }
+        if (user.brevoSenderId)
+            return;
+        const senderId = await this.brevoMarketing.createSender({
+            name: user.name ?? user.email,
+            email: user.email,
+        });
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { brevoSenderId: senderId },
+        });
+    }
+    async removeBrevoSenderForUserId(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: { role: true },
+        });
+        if (!user)
+            throw new common_1.NotFoundException(`User ${userId} not found`);
+        const senderId = user.brevoSenderId;
+        if (!senderId)
+            return;
+        await this.brevoMarketing.deleteSender(senderId).catch(() => undefined);
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { brevoSenderId: null },
+        });
+    }
+    async handleEmailChangeIfNeeded(before, after) {
+        const emailChanged = (before.email ?? null) !== (after.email ?? null);
+        if (!emailChanged)
+            return;
+        if (!this.canCreateEmail(after))
+            return;
+        if (before.brevoSenderId) {
+            await this.brevoMarketing
+                .deleteSender(before.brevoSenderId)
+                .catch(() => undefined);
+        }
+        if (!after.email) {
+            await this.prisma.user.update({
+                where: { id: after.id },
+                data: { brevoSenderId: null },
+            });
+            return;
+        }
+        const newSenderId = await this.brevoMarketing.createSender({
+            name: after.name ?? after.email,
+            email: after.email,
+        });
+        await this.prisma.user.update({
+            where: { id: after.id },
+            data: { brevoSenderId: newSenderId },
+        });
     }
     async getUsers() {
         return this.prisma.user.findMany({
@@ -37,7 +110,7 @@ let UsersService = class UsersService {
             throw new Error("Keycloak user id missing after creation");
         }
         try {
-            return await this.prisma.user.create({
+            const created = await this.prisma.user.create({
                 data: {
                     keycloakId: kcUser.id,
                     email: email ?? null,
@@ -46,6 +119,14 @@ let UsersService = class UsersService {
                 },
                 include: { role: true },
             });
+            if (this.canCreateEmail(created)) {
+                await this.ensureBrevoSenderForUserId(created.id);
+                return this.prisma.user.findUniqueOrThrow({
+                    where: { id: created.id },
+                    include: { role: true },
+                });
+            }
+            return created;
         }
         catch (e) {
             await this.safeDeleteKeycloakUser(kcUser.id);
@@ -69,13 +150,28 @@ let UsersService = class UsersService {
         if (input.temporaryPassword) {
             await this.keycloakAdminUsers.setTemporaryPassword(existing.keycloakId, input.temporaryPassword);
         }
-        return this.prisma.user.update({
+        const updated = await this.prisma.user.update({
             where: { id: userId },
             data: {
                 ...(input.email !== undefined ? { email: input.email } : {}),
                 ...(input.name !== undefined ? { name: input.name } : {}),
                 ...(input.roleId ? { role: { connect: { id: input.roleId } } } : {}),
             },
+            include: { role: true },
+        });
+        const beforeCan = this.canCreateEmail(existing);
+        const afterCan = this.canCreateEmail(updated);
+        if (!beforeCan && afterCan) {
+            await this.ensureBrevoSenderForUserId(updated.id);
+        }
+        else if (beforeCan && !afterCan) {
+            await this.removeBrevoSenderForUserId(updated.id);
+        }
+        else {
+            await this.handleEmailChangeIfNeeded(existing, updated);
+        }
+        return this.prisma.user.findUniqueOrThrow({
+            where: { id: userId },
             include: { role: true },
         });
     }
@@ -87,6 +183,7 @@ let UsersService = class UsersService {
         if (!existing) {
             throw new common_1.NotFoundException(`User ${userId} not found`);
         }
+        await this.removeBrevoSenderForUserId(existing.id).catch(() => undefined);
         await this.keycloakAdminUsers.deleteUser(existing.keycloakId);
         return this.prisma.user.delete({
             where: { id: userId },
@@ -116,6 +213,7 @@ exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        users_services_1.KeycloakAdminUsersService])
+        users_services_1.KeycloakAdminUsersService,
+        brevo_marketing_service_1.BrevoMarketingService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

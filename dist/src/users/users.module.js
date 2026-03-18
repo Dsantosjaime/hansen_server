@@ -11,13 +11,14 @@ const common_1 = require("@nestjs/common");
 const users_service_1 = require("./users.service");
 const keycloak_module_1 = require("../keycloak/keycloak.module");
 const users_controller_1 = require("./users.controller");
+const brevo_module_1 = require("../brevo/brevo.module");
 let UsersModule = class UsersModule {
 };
 exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [keycloak_module_1.KeycloakModule],
+        imports: [keycloak_module_1.KeycloakModule, brevo_module_1.BrevoModule],
         controllers: [users_controller_1.UsersController],
         providers: [users_service_1.UsersService],
         exports: [users_service_1.UsersService],
