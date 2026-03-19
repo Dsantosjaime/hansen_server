@@ -26,6 +26,7 @@ export declare class UsersService {
     private handleEmailChangeIfNeeded;
     getUsers(): Promise<UserWithRole[]>;
     createUserWithRole(name: string, temporaryPassword: string, roleId: string, email: string): Promise<UserWithRole>;
+    getUserByKeycloakId(keycloakId: string): Promise<UserWithRole>;
     updateUser(userId: string, input: UpdateUserInput): Promise<UserWithRole>;
     deleteUser(userId: string): Promise<UserWithRole>;
     updateFromKeycloak(payload: KeycloakJwtPayload): Promise<UserWithRole>;

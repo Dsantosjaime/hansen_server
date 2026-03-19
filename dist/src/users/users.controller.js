@@ -26,6 +26,13 @@ let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
     }
+    async getMe(req) {
+        const kcUser = req.user;
+        if (!kcUser?.sub) {
+            throw new common_1.ForbiddenException("Missing user");
+        }
+        return this.usersService.getUserByKeycloakId(kcUser.sub);
+    }
     async getUsers() {
         return this.usersService.getUsers();
     }
@@ -45,6 +52,16 @@ let UsersController = class UsersController {
     }
 };
 exports.UsersController = UsersController;
+__decorate([
+    (0, common_1.Get)("me"),
+    (0, swagger_1.ApiOperation)({
+        summary: "Retourne l'utilisateur courant (Mongo) avec son rôle et permissions",
+    }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getMe", null);
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({ summary: "Lister les utilisateurs (Mongo) avec leur rôle" }),

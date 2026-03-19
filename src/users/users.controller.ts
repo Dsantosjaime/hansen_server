@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -20,6 +22,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { CaslGuard } from "src/casl/casl.guard";
 import { CheckAbilities } from "src/casl/check-abilities.decorator";
+import { RequestWithAuth } from "@/auth/request-with-user.type";
 
 @ApiTags("users")
 @ApiBearerAuth("jwt")
@@ -27,6 +30,20 @@ import { CheckAbilities } from "src/casl/check-abilities.decorator";
 @UseGuards(JwtAuthGuard, CaslGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get("me")
+  @ApiOperation({
+    summary:
+      "Retourne l'utilisateur courant (Mongo) avec son rôle et permissions",
+  })
+  async getMe(@Req() req: RequestWithAuth) {
+    const kcUser = req.user;
+
+    if (!kcUser?.sub) {
+      throw new ForbiddenException("Missing user");
+    }
+    return this.usersService.getUserByKeycloakId(kcUser.sub);
+  }
 
   @Get()
   @ApiOperation({ summary: "Lister les utilisateurs (Mongo) avec leur rôle" })

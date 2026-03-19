@@ -133,6 +133,16 @@ let UsersService = class UsersService {
             throw e;
         }
     }
+    async getUserByKeycloakId(keycloakId) {
+        const user = await this.prisma.user.findUnique({
+            where: { keycloakId },
+            include: { role: true },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException(`User with keycloakId=${keycloakId} not found`);
+        }
+        return user;
+    }
     async updateUser(userId, input) {
         const existing = await this.prisma.user.findUnique({
             where: { id: userId },

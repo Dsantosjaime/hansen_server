@@ -167,6 +167,21 @@ export class UsersService {
     }
   }
 
+  async getUserByKeycloakId(keycloakId: string): Promise<UserWithRole> {
+    const user = await this.prisma.user.findUnique({
+      where: { keycloakId },
+      include: { role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        `User with keycloakId=${keycloakId} not found`,
+      );
+    }
+
+    return user;
+  }
+
   async updateUser(
     userId: string,
     input: UpdateUserInput,
