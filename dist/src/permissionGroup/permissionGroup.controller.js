@@ -29,17 +29,17 @@ exports.PermissionGroupController = PermissionGroupController;
 __decorate([
     (0, common_1.Get)(),
     (0, swagger_1.ApiOperation)({
-        summary: 'Recuperer les groupes de permission',
+        summary: "Recuperer les groupes de permission",
     }),
-    (0, check_abilities_decorator_1.CheckAbilities)({ action: 'read', subject: 'PermissionGroup' }),
+    (0, check_abilities_decorator_1.CheckAbilities)({ action: "read", subject: "PermissionGroup" }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], PermissionGroupController.prototype, "getPermissionGroups", null);
 exports.PermissionGroupController = PermissionGroupController = __decorate([
-    (0, swagger_1.ApiTags)('permissionGroup'),
-    (0, swagger_1.ApiBearerAuth)('jwt'),
-    (0, common_1.Controller)('permission-groups'),
+    (0, swagger_1.ApiTags)("permissionGroup"),
+    (0, swagger_1.ApiBearerAuth)("jwt"),
+    (0, common_1.Controller)("permission-groups"),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, casl_guard_1.CaslGuard),
     __metadata("design:paramtypes", [permissionGroup_service_1.PermissionGroupService])
 ], PermissionGroupController);

@@ -1,4 +1,4 @@
-import { PermissionGroupService } from './permissionGroup.service';
+import { PermissionGroupService } from "./permissionGroup.service";
 export declare class PermissionGroupController {
     private readonly permissionGroupService;
     constructor(permissionGroupService: PermissionGroupService);
