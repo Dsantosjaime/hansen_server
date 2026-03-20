@@ -25,7 +25,7 @@ async function bootstrap() {
         allowedHeaders: ["Authorization", "Content-Type"],
         credentials: true,
     });
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV === "production") {
         const config = new swagger_1.DocumentBuilder()
             .setTitle("Hansen API")
             .setDescription("API documentation")
