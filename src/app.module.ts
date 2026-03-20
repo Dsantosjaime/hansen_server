@@ -20,6 +20,7 @@ import { PluginParamsModule } from "./plugin-params/plugin-params.module";
 import { ScrapModule } from "./scrap/scrap.module";
 import { EmailAddressTemplatesModule } from "./email-address-templates/email-address-templates.module";
 import { ExtractModule } from "./extract/extract.module";
+import { ImportContactsModule } from "./import-contacts/import-contacts.module";
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ExtractModule } from "./extract/extract.module";
     ScrapModule,
     EmailAddressTemplatesModule,
     ExtractModule,
+    ImportContactsModule,
   ],
 })
 export class AppModule {}

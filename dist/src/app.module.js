@@ -26,6 +26,7 @@ const plugin_params_module_1 = require("./plugin-params/plugin-params.module");
 const scrap_module_1 = require("./scrap/scrap.module");
 const email_address_templates_module_1 = require("./email-address-templates/email-address-templates.module");
 const extract_module_1 = require("./extract/extract.module");
+const import_contacts_module_1 = require("./import-contacts/import-contacts.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -62,6 +63,7 @@ exports.AppModule = AppModule = __decorate([
             scrap_module_1.ScrapModule,
             email_address_templates_module_1.EmailAddressTemplatesModule,
             extract_module_1.ExtractModule,
+            import_contacts_module_1.ImportContactsModule,
         ],
     })
 ], AppModule);
