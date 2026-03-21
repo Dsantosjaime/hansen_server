@@ -21,6 +21,7 @@ type ImportContactsFromCsvArgs = {
   groupName: string;
   csvBuffer: Buffer;
   dryRun?: boolean;
+  debug?: boolean; // <-- AJOUT: active les logs détaillés
 };
 
 type MinimalGroup = { id: string; name: string };
@@ -154,6 +155,20 @@ function allBlankExcept(row: string[], keepIndex: number): boolean {
   );
 }
 
+// Helpers debug
+function maskEmail(email: string): string {
+  const e = (email ?? "").trim();
+  if (!e) return "";
+  const [local, domain] = e.split("@");
+  if (!domain) return e.slice(0, 2) + "***";
+  return `${local?.slice(0, 2) ?? ""}***@${domain}`;
+}
+
+function rowPreview(row: string[], max = 8): string {
+  const cells = (row ?? []).slice(0, max).map((c) => (c ?? "").trim());
+  return cells.join(" | ") + ((row?.length ?? 0) > max ? " | ..." : "");
+}
+
 @Injectable()
 export class ImportContactsService {
   private readonly logger = new Logger(ImportContactsService.name);
@@ -195,7 +210,9 @@ export class ImportContactsService {
     });
 
     if (existing) {
+      // NOTE: ici, l'appel Brevo peut throw. On le laisse tel quel pour garder le comportement.
       await this.brevo.ensureBrevoListForSubGroup(existing.id);
+
       return {
         subGroup: {
           id: existing.id,
@@ -227,6 +244,11 @@ export class ImportContactsService {
     args: ImportContactsFromCsvArgs,
   ): Promise<ImportContactsCsvResponseDto> {
     const dryRun = !!args.dryRun;
+    const debug = !!args.debug || process.env.IMPORT_DEBUG === "1";
+    const dlog = (msg: string) => {
+      if (debug) this.logger.log(`[IMPORT_DEBUG] ${msg}`);
+    };
+
     const groupName = (args.groupName ?? "").trim();
 
     if (!groupName) throw new BadRequestException("groupName is required");
@@ -236,11 +258,15 @@ export class ImportContactsService {
     const csvText = args.csvBuffer.toString("utf-8");
     const { delimiter, rows } = parseCsvWithBestDelimiter(csvText);
 
+    dlog(`delimiter="${delimiter}" rows=${rows.length}`);
+
     if (rows.length < 2) {
       throw new BadRequestException(
         "CSV must have at least a header row + data",
       );
     }
+
+    dlog(`headerRow="${(rows[0] ?? []).join(" | ")}"`);
 
     const headerRow = rows[0].map((h) => normalizeHeader(h));
     const colIndex = (aliases: string[]) =>
@@ -259,6 +285,10 @@ export class ImportContactsService {
     const idxAccuse = colIndex(["accuse"]);
     const idxContacte = colIndex(["contacte"]);
 
+    dlog(
+      `indexes: labelIndex=${labelIndex} idxMail=${idxMail} idxPrenom=${idxPrenom} idxNom=${idxNom} idxFonction=${idxFonction} idxPortable=${idxPortable} idxFixe=${idxFixe}`,
+    );
+
     if (idxMail < 0) {
       throw new BadRequestException(
         `CSV must contain a "Mail" column. Found: ${rows[0].join(" | ")}`,
@@ -266,6 +296,7 @@ export class ImportContactsService {
     }
 
     const group = await this.ensureGroupByName(groupName);
+    dlog(`group resolved: id=${group.id} name="${group.name}"`);
 
     let currentSubGroup: MinimalSubGroup | null = null;
 
@@ -297,8 +328,10 @@ export class ImportContactsService {
     const ensureListId = async (subGroupId: string) => {
       let listId = listIdBySubGroupId.get(subGroupId);
       if (!listId) {
+        dlog(`BREVO ensure list start subGroupId=${subGroupId}`);
         listId = await this.brevo.ensureBrevoListForSubGroup(subGroupId);
         listIdBySubGroupId.set(subGroupId, listId);
+        dlog(`BREVO ensure list ok subGroupId=${subGroupId} listId=${listId}`);
       }
       return listId;
     };
@@ -363,15 +396,24 @@ export class ImportContactsService {
       const row = rows[i] ?? [];
       if (!row.length) continue;
 
-      if (rowLooksLikeColumnsHeader(row)) continue;
+      if (rowLooksLikeColumnsHeader(row)) {
+        dlog(`row=${i + 1} SKIP headerRepeated`);
+        continue;
+      }
 
-      // 1) SubGroup header confirmé
+      // 1) SubGroup header
       if (isSubGroupHeaderRow(row)) {
         const candidate = getLabel(row);
+        dlog(
+          `row=${i + 1} SUBGROUP candidate="${candidate}" preview="${rowPreview(row)}"`,
+        );
 
-        if (!confirmSubGroup(i, candidate)) {
-          // important: éviter de garder un ancien sous-groupe actif
+        const ok = confirmSubGroup(i, candidate);
+        dlog(`row=${i + 1} SUBGROUP confirm ok=${ok} name="${candidate}"`);
+
+        if (!ok) {
           currentSubGroup = null;
+          dlog(`row=${i + 1} SUBGROUP ignored (not confirmed)`);
           continue;
         }
 
@@ -381,6 +423,9 @@ export class ImportContactsService {
         if (cached) {
           currentSubGroup = cached;
           stats.subGroupsReused++;
+          dlog(
+            `row=${i + 1} SUBGROUP set cached id=${cached.id} name="${cached.name}"`,
+          );
           continue;
         }
 
@@ -393,10 +438,12 @@ export class ImportContactsService {
           currentSubGroup = sg;
           subGroupCache.set(cacheKey, sg);
           stats.subGroupsCreated++;
+          dlog(`row=${i + 1} SUBGROUP set dryRun name="${candidate}"`);
           continue;
         }
 
         try {
+          dlog(`row=${i + 1} SUBGROUP ensure start name="${candidate}"`);
           const { subGroup: sg, created } = await this.ensureSubGroupByName(
             group.id,
             candidate,
@@ -408,8 +455,17 @@ export class ImportContactsService {
           if (created) stats.subGroupsCreated++;
           else stats.subGroupsReused++;
 
+          dlog(
+            `row=${i + 1} SUBGROUP ensure ok id=${sg.id} created=${created}`,
+          );
+
+          // ensure list Brevo (peut planter ici)
           await ensureListId(sg.id);
         } catch (e: any) {
+          dlog(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `row=${i + 1} SUBGROUP ensure FAIL name="${candidate}" error="${e?.message ?? String(e)}"`,
+          );
           stats.errors.push({
             row: i + 1,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -421,28 +477,40 @@ export class ImportContactsService {
       }
 
       // 2) Contact row
-      // ---- PATCH: fallback email si la colonne Mail est vide (ligne décalée)
-      let email = normalizeEmail(idxMail >= 0 ? row[idxMail] : "");
-      if (!email) {
-        const anyEmail = (row ?? [])
+      const label = getLabel(row);
+
+      // email depuis colonne Mail
+      const emailInMail = normalizeEmail(idxMail >= 0 ? row[idxMail] : "");
+
+      // fallback email ailleurs (ligne décalée)
+      const emailAnywhere =
+        (row ?? [])
           .map((c) => normalizeEmail(c))
-          .find((e) => e && isValidEmail(e));
-        if (anyEmail) email = anyEmail;
-      }
-      // ---- fin PATCH
+          .find((e) => e && isValidEmail(e)) ?? "";
+
+      const email = emailInMail || emailAnywhere;
+
+      dlog(
+        `row=${i + 1} CONTACT emailDetect label="${label}" mailCol="${maskEmail(emailInMail)}" any="${maskEmail(emailAnywhere)}" chosen="${maskEmail(email)}" currentSubGroup="${currentSubGroup?.name ?? ""}" preview="${rowPreview(row)}"`,
+      );
 
       if (!email) {
         stats.contactsSkippedNoEmail++;
+        dlog(`row=${i + 1} SKIP noEmail label="${label}"`);
         continue;
       }
+
       if (!isValidEmail(email)) {
         stats.contactsSkippedInvalidEmail++;
+        dlog(
+          `row=${i + 1} SKIP invalidEmail value="${email}" label="${label}"`,
+        );
         continue;
       }
 
       // Fallback: infère le SubGroup depuis la colonne label
       if (!currentSubGroup) {
-        const inferred = getLabel(row);
+        const inferred = label;
 
         if (inferred) {
           const cacheKey = `${group.id}:${inferred}`;
@@ -450,6 +518,9 @@ export class ImportContactsService {
 
           if (cached) {
             currentSubGroup = cached;
+            dlog(
+              `row=${i + 1} SUBGROUP inferred cached id=${cached.id} name="${cached.name}"`,
+            );
           } else if (dryRun) {
             const sg: MinimalSubGroup = {
               id: "__dryRun__",
@@ -459,8 +530,10 @@ export class ImportContactsService {
             currentSubGroup = sg;
             subGroupCache.set(cacheKey, sg);
             stats.subGroupsCreated++;
+            dlog(`row=${i + 1} SUBGROUP inferred dryRun name="${inferred}"`);
           } else {
             try {
+              dlog(`row=${i + 1} SUBGROUP inferred ensure start "${inferred}"`);
               const { subGroup: sg, created } = await this.ensureSubGroupByName(
                 group.id,
                 inferred,
@@ -472,8 +545,16 @@ export class ImportContactsService {
               if (created) stats.subGroupsCreated++;
               else stats.subGroupsReused++;
 
+              dlog(
+                `row=${i + 1} SUBGROUP inferred ensure ok id=${sg.id} created=${created}`,
+              );
+
               await ensureListId(sg.id);
             } catch (e: any) {
+              dlog(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                `row=${i + 1} SUBGROUP inferred ensure FAIL "${inferred}" error="${e?.message ?? String(e)}"`,
+              );
               stats.errors.push({
                 row: i + 1,
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -486,6 +567,9 @@ export class ImportContactsService {
 
       if (!currentSubGroup || currentSubGroup.id === "__dryRun__") {
         stats.contactsSkippedNoSubGroup++;
+        dlog(
+          `row=${i + 1} SKIP noSubGroup label="${label}" email="${maskEmail(email)}"`,
+        );
         continue;
       }
 
@@ -507,6 +591,9 @@ export class ImportContactsService {
       try {
         if (dryRun) {
           stats.contactsUpserted++;
+          dlog(
+            `row=${i + 1} DRYRUN upsert ok email="${maskEmail(email)}" subGroup="${currentSubGroup.name}"`,
+          );
           continue;
         }
 
@@ -555,6 +642,9 @@ export class ImportContactsService {
         });
 
         stats.contactsUpserted++;
+        dlog(
+          `row=${i + 1} CONTACT upsert ok email="${maskEmail(saved.email)}" subGroup="${currentSubGroup.name}"`,
+        );
 
         const listId = await ensureListId(currentSubGroup.id);
 
@@ -573,6 +663,10 @@ export class ImportContactsService {
 
         stats.brevoPrepared++;
       } catch (e: any) {
+        dlog(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          `row=${i + 1} CONTACT upsert FAIL email="${maskEmail(email)}" subGroup="${currentSubGroup?.name ?? ""}" error="${e?.message ?? String(e)}"`,
+        );
         stats.errors.push({
           row: i + 1,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -597,6 +691,10 @@ export class ImportContactsService {
         failed,
       };
     }
+
+    dlog(
+      `DONE upserted=${stats.contactsUpserted} skipNoEmail=${stats.contactsSkippedNoEmail} skipInvalidEmail=${stats.contactsSkippedInvalidEmail} skipNoSubGroup=${stats.contactsSkippedNoSubGroup} errors=${stats.errors.length}`,
+    );
 
     return stats;
   }
