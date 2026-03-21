@@ -37,8 +37,8 @@ export function buildEmailFromTemplate(params: {
   const firstRaw = params.names?.[0] ?? "";
   const lastRaw = params.names?.[1] ?? "";
 
-  const domain = normalizePart(params.domain);
-  const ext = normalizePart(params.extension);
+  const domain = params.domain;
+  const ext = params.extension;
 
   if (!domain || !ext) return "";
 
