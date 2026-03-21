@@ -11,11 +11,15 @@ import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { ImportContactsService } from "./import-contacts.service";
 import { ImportContactsCsvRequestDto } from "./dto/import-contacts.request.dto";
 import { ImportContactsCsvResponseDto } from "./dto/import-contacts.response.dto";
+import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 
 @ApiTags("import-contacts")
 @Controller("import-contacts")
 export class ImportContactsController {
-  constructor(private readonly importer: ImportContactsService) {}
+  constructor(
+    private readonly importer: ImportContactsService,
+    private readonly brevoMarketing: BrevoMarketingService,
+  ) {}
 
   /**
    * WARNING: Route volontairement SANS AUTH pour un import one-shot.
@@ -37,6 +41,24 @@ export class ImportContactsController {
     return this.importer.importContactsFromCsv({
       groupName,
       csvBuffer: file?.buffer,
+      dryRun: dryRun === "true",
+    });
+  }
+
+  /**
+   * Nettoyage Brevo : supprime toutes les listes associées aux SubGroups (subGroup.brevoListId)
+   * et met brevoListId à null dans la DB.
+   *
+   * - Ne supprime PAS les groups/subgroups/contacts en DB.
+   * - dryRun=true pour simuler.
+   */
+  @Post("brevo/cleanup-subgroup-lists")
+  @ApiOperation({
+    summary:
+      "Brevo cleanup: delete all Brevo lists associated to subGroups (brevoListId) and clear brevoListId in DB (no DB delete).",
+  })
+  async cleanupBrevoSubGroupLists(@Query("dryRun") dryRun?: string) {
+    return this.brevoMarketing.cleanupSubGroupBrevoLists({
       dryRun: dryRun === "true",
     });
   }

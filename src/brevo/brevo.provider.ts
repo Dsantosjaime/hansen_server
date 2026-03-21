@@ -24,7 +24,6 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// SDK: certains retours sont parfois { body: ... }
 function unwrapBody<T>(res: unknown): T {
   const r = res as any;
   return (r?.body ?? r) as T;
@@ -111,8 +110,9 @@ export const brevoClientProvider: Provider = {
       },
 
       async sendCampaignNow(campaignId: number): Promise<void> {
-        const id = String(campaignId);
-        await (emailCampaignsApi as any).sendEmailCampaignNow(id);
+        await (emailCampaignsApi as any).sendEmailCampaignNow(
+          String(campaignId),
+        );
       },
 
       async createList(name: string): Promise<{ id: number }> {
@@ -123,6 +123,11 @@ export const brevoClientProvider: Provider = {
         const res = await contactsApi.createList({ name, folderId } as any);
         const data = unwrapBody<any>(res);
         return { id: toNumber(data?.id) };
+      },
+
+      async deleteList(listId: number): Promise<void> {
+        // SDK varie selon versions, on force via any + String
+        await (contactsApi as any).deleteList(String(listId));
       },
 
       async removeEmailsFromList(

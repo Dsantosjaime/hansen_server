@@ -20,27 +20,23 @@ export type BrevoCreateCampaignFromTemplateInput = {
   sender: { name: string; email: string };
   listIds: number[];
 
-  // Template Brevo choisi par l’utilisateur
   templateId: number;
-
-  // On le met explicitement pour être robuste (au lieu de supposer que Brevo copie le subject)
   subject: string;
 
-  // Optional
   replyTo?: string;
   scheduledAt?: string;
   attachmentUrl?: string;
 };
 
 export interface BrevoClient {
-  // Templates (Brevo UI)
+  // Templates
   listEmailTemplates(args: {
     limit: number;
     offset: number;
   }): Promise<BrevoEmailTemplate[]>;
   getEmailTemplate(templateId: number): Promise<BrevoEmailTemplate>;
 
-  // Campaign creation (marketing)
+  // Campaigns
   createCampaignFromTemplate(
     input: BrevoCreateCampaignFromTemplateInput,
   ): Promise<{ id: number }>;
@@ -48,6 +44,7 @@ export interface BrevoClient {
 
   // Lists
   createList(name: string): Promise<{ id: number }>;
+  deleteList(listId: number): Promise<void>; // <-- AJOUT
   removeEmailsFromList(listId: number, emails: string[]): Promise<void>;
 
   // Contacts
@@ -66,7 +63,7 @@ export interface BrevoClient {
     type?: "classic" | "trigger";
   }): Promise<BrevoEmailCampaign[]>;
 
-  // Senders (From)
+  // Senders
   createSender(args: { name: string; email: string }): Promise<{ id: number }>;
   deleteSender(senderId: number): Promise<void>;
 }

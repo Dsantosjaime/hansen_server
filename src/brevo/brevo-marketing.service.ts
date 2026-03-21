@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  Logger,
 } from "@nestjs/common";
 import { Inject } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -21,6 +22,8 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 @Injectable()
 export class BrevoMarketingService {
+  private readonly logger = new Logger(BrevoMarketingService.name);
+
   private readonly senderEmail: string;
   private readonly senderName: string;
   private readonly chunkSize: number;
@@ -141,8 +144,172 @@ export class BrevoMarketingService {
   }
 
   /**
+   * NOUVEAU: supprime une liste Brevo
+   */
+  async deleteBrevoList(listId: number): Promise<void> {
+    await this.brevo.deleteList(listId);
+  }
+
+  /**
+   * NOUVEAU: supprime la liste Brevo associée à un SubGroup (si elle existe),
+   * puis nettoie la DB (brevoListId = null)
+   */
+  async deleteBrevoListForSubGroup(subGroupId: string): Promise<{
+    subGroupId: string;
+    listId: number | null;
+    deletedRemote: boolean;
+  }> {
+    const sg = await this.prisma.subGroup.findUnique({
+      where: { id: subGroupId },
+      select: { id: true, brevoListId: true },
+    });
+
+    if (!sg) throw new NotFoundException(`SubGroup ${subGroupId} not found`);
+
+    if (!sg.brevoListId) {
+      return { subGroupId, listId: null, deletedRemote: false };
+    }
+
+    const listId = sg.brevoListId;
+
+    let deletedRemote = false;
+    try {
+      await this.brevo.deleteList(listId);
+      deletedRemote = true;
+    } catch (e: any) {
+      // Si la liste n'existe déjà plus, on veut quand même nettoyer la DB
+      this.logger.warn(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `deleteList failed for listId=${listId} subGroupId=${subGroupId}: ${e?.message ?? String(e)}`,
+      );
+    }
+
+    await this.prisma.subGroup.update({
+      where: { id: subGroupId },
+      data: { brevoListId: null },
+    });
+
+    return { subGroupId, listId, deletedRemote };
+  }
+
+  /**
+   * NOUVEAU: nettoyage global => supprime toutes les listes Brevo stockées sur subGroup.brevoListId
+   * - dryRun=true : ne supprime rien, mais retourne ce qui serait supprimé
+   */
+  async cleanupAllSubGroupLists(args?: { dryRun?: boolean }): Promise<{
+    dryRun: boolean;
+    totalWithListId: number;
+    deletedRemote: number;
+    dbCleared: number;
+    failedRemoteDelete: number;
+    results: Array<{
+      subGroupId: string;
+      listId: number;
+      deletedRemote: boolean;
+      dbCleared: boolean;
+      error?: string;
+    }>;
+  }> {
+    const dryRun = !!args?.dryRun;
+
+    const subGroups = await this.prisma.subGroup.findMany({
+      where: { brevoListId: { not: null } },
+      select: { id: true, brevoListId: true },
+    });
+
+    const results: Array<{
+      subGroupId: string;
+      listId: number;
+      deletedRemote: boolean;
+      dbCleared: boolean;
+      error?: string;
+    }> = [];
+
+    let deletedRemote = 0;
+    let dbCleared = 0;
+    let failedRemoteDelete = 0;
+
+    for (const sg of subGroups) {
+      const listId = sg.brevoListId!;
+      if (dryRun) {
+        results.push({
+          subGroupId: sg.id,
+          listId,
+          deletedRemote: false,
+          dbCleared: false,
+        });
+        continue;
+      }
+
+      let remoteOk = false;
+      try {
+        await this.brevo.deleteList(listId);
+        remoteOk = true;
+        deletedRemote++;
+      } catch (e: any) {
+        failedRemoteDelete++;
+        results.push({
+          subGroupId: sg.id,
+          listId,
+          deletedRemote: false,
+          dbCleared: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+          error: e?.message ?? String(e),
+        });
+      }
+
+      try {
+        await this.prisma.subGroup.update({
+          where: { id: sg.id },
+          data: { brevoListId: null },
+        });
+        dbCleared++;
+
+        // si on avait déjà push un résultat d'erreur, on le complète sinon on push normal
+        if (!results.find((r) => r.subGroupId === sg.id)) {
+          results.push({
+            subGroupId: sg.id,
+            listId,
+            deletedRemote: remoteOk,
+            dbCleared: true,
+          });
+        } else {
+          const r = results.find((r) => r.subGroupId === sg.id)!;
+          r.dbCleared = true;
+          r.deletedRemote = remoteOk;
+        }
+      } catch (e: any) {
+        results.push({
+          subGroupId: sg.id,
+          listId,
+          deletedRemote: remoteOk,
+          dbCleared: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          error: `DB update failed: ${e?.message ?? String(e)}`,
+        });
+      }
+    }
+
+    return {
+      dryRun,
+      totalWithListId: subGroups.length,
+      deletedRemote,
+      dbCleared,
+      failedRemoteDelete,
+      results,
+    };
+  }
+
+  /**
+   * AJOUT: alias "propre" pour la route controller
+   * => supprime toutes les lists associées aux subGroups via brevoListId, puis met brevoListId=null en DB.
+   */
+  async cleanupSubGroupBrevoLists(args?: { dryRun?: boolean }) {
+    return this.cleanupAllSubGroupLists(args);
+  }
+
+  /**
    * Crée une campagne depuis un template, ciblée sur DES listIds donnés, puis envoi immédiat
-   * Permet de surcharger sender/replyTo (ex: sender = user courant).
    */
   async createAndSendCampaignFromTemplateToLists(args: {
     templateId: number;
@@ -280,10 +447,6 @@ export class BrevoMarketingService {
     return { subGroups: subGroups.length, results };
   }
 
-  /**
-   * Ancienne route (Brevo direct) conservée si tu l'utilises ailleurs.
-   * (Tu peux la garder, mais notre flow "new-only" ne l'utilise plus.)
-   */
   async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
     campaignId: number;
     listIds: number[];
