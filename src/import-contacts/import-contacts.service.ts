@@ -206,7 +206,6 @@ export class ImportContactsService {
       };
     }
 
-    // Option 2: create peut être typé nullable
     const created = await this.subGroups.create({ groupId, name: trimmed });
     if (!created) {
       throw new InternalServerErrorException(
@@ -311,10 +310,16 @@ export class ImportContactsService {
       if (!label) return false;
 
       // header = une ligne où seule la colonne "label" est remplie
-      // (ça marche même si le fichier a une colonne vide en 0)
       return allBlankExcept(row, labelIndex);
     };
 
+    /**
+     * Sous-groupe "confirmé" de manière tolérante:
+     * - ignore headers répétés
+     * - ignore lignes vides
+     * - confirme si un email valide apparaît avant le prochain sous-groupe
+     * - gère aussi les cas où l'email est décalé dans une autre colonne
+     */
     const confirmSubGroup = (startIndex: number, candidateName: string) => {
       const cand = (candidateName ?? "").trim();
       if (!cand) return false;
@@ -325,14 +330,30 @@ export class ImportContactsService {
         const r = rows[j];
         if (!r?.length) continue;
 
-        if (rowLooksLikeColumnsHeader(r)) return false;
+        if (rowLooksLikeColumnsHeader(r)) continue;
+        if (r.every((c) => isBlankCell(c))) continue;
+
+        // stop si on atteint un autre sous-groupe
+        if (isSubGroupHeaderRow(r)) {
+          const next = getLabel(r);
+          if (next && next !== cand) return false;
+        }
 
         const label = getLabel(r);
-        const email = normalizeEmail(idxMail >= 0 ? r[idxMail] : "");
 
-        if (label === cand && email && isValidEmail(email)) return true;
+        // email dans la colonne Mail
+        const emailInMail = normalizeEmail(idxMail >= 0 ? r[idxMail] : "");
+        if (emailInMail && isValidEmail(emailInMail)) {
+          if (!label || label === cand) return true;
+        }
 
-        if (label && label !== cand && isSubGroupHeaderRow(r)) return false;
+        // fallback: email ailleurs dans la ligne si label matche
+        if (label === cand) {
+          const anyEmail = (r ?? [])
+            .map((c) => normalizeEmail(c))
+            .find((e) => e && isValidEmail(e));
+          if (anyEmail) return true;
+        }
       }
 
       return false;
@@ -349,6 +370,8 @@ export class ImportContactsService {
         const candidate = getLabel(row);
 
         if (!confirmSubGroup(i, candidate)) {
+          // important: éviter de garder un ancien sous-groupe actif
+          currentSubGroup = null;
           continue;
         }
 
@@ -398,7 +421,15 @@ export class ImportContactsService {
       }
 
       // 2) Contact row
-      const email = normalizeEmail(idxMail >= 0 ? row[idxMail] : "");
+      // ---- PATCH: fallback email si la colonne Mail est vide (ligne décalée)
+      let email = normalizeEmail(idxMail >= 0 ? row[idxMail] : "");
+      if (!email) {
+        const anyEmail = (row ?? [])
+          .map((c) => normalizeEmail(c))
+          .find((e) => e && isValidEmail(e));
+        if (anyEmail) email = anyEmail;
+      }
+      // ---- fin PATCH
 
       if (!email) {
         stats.contactsSkippedNoEmail++;
