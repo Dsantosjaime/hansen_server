@@ -50,8 +50,6 @@ export class CaslGuard implements CanActivate {
       permissions: dbUser.role.permissions,
     });
 
-    console.log("check", required, dbUser.role.permissions);
-
     for (const r of required) {
       if (!ability.can(r.action, r.subject)) {
         throw new ForbiddenException("Forbidden by CASL");
