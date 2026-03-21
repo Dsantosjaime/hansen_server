@@ -244,7 +244,7 @@ export class ImportContactsService {
     args: ImportContactsFromCsvArgs,
   ): Promise<ImportContactsCsvResponseDto> {
     const dryRun = !!args.dryRun;
-    const debug = !!args.debug || process.env.IMPORT_DEBUG === "1";
+    const debug = true;
     const dlog = (msg: string) => {
       if (debug) this.logger.log(`[IMPORT_DEBUG] ${msg}`);
     };
