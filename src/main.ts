@@ -30,7 +30,7 @@ async function bootstrap() {
   });
 
   // Swagger config
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "production") {
     const config = new DocumentBuilder()
       .setTitle("Hansen API")
       .setDescription("API documentation")
