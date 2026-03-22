@@ -1,12 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider      = "prisma-client"
+  output        = "../generated/prisma"
   binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
@@ -31,19 +25,19 @@ model User {
 }
 
 type Permission {
-  subject String // "Post"
-  action  String // "create"
+  subject String
+  action  String
 }
 
 type PermissionSubGroup {
-  name          String
-  permissions   Permission[]
+  name        String
+  permissions Permission[]
 }
 
 model PermissionGroup {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  name                String   @unique
-  permissionSubGroup  PermissionSubGroup[]
+  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  name               String              @unique
+  permissionSubGroup PermissionSubGroup[]
 }
 
 model Role {
@@ -70,7 +64,8 @@ model SubGroup {
   groupId String @db.ObjectId
   group   Group  @relation(fields: [groupId], references: [id])
 
-  brevoListId Int? 
+  // Legacy (à nettoyer) : 1 list par subgroup => atteint la limite 300
+  brevoListId Int?
 
   @@index([groupId])
 }
@@ -83,20 +78,20 @@ enum ContactStatus {
 }
 
 model Contact {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
   firstName   String
   lastName    String
   function    String
   status      ContactStatus @default(NO_EXCHANGE)
-  email       String @unique
+  email       String        @unique
   phoneNumber String[]
   lastContact String
   lastEmail   String
-  groupId     String @db.ObjectId
-  subGroupId  String @db.ObjectId
+  groupId     String        @db.ObjectId
+  subGroupId  String        @db.ObjectId
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 type EmailSendSubGroup {
@@ -107,40 +102,34 @@ type EmailSendSubGroup {
 }
 
 type EmailSendGroup {
-  groupId    String @db.ObjectId
-  groupName  String
-  subGroups  EmailSendSubGroup[]
+  groupId   String @db.ObjectId
+  groupName String
+  subGroups EmailSendSubGroup[]
 }
 
 model EmailSend {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  // 1 doc par campagne provider (run)
   brevoCampaignId String   @unique
-
-  // Pour pouvoir dédupliquer “nouveaux contacts” par template
   templateId      Int
 
   name            String?
   subject         String
   status          String
 
-  // Ciblage enregistré (pour affichage + historique)
   affected        EmailSendGroup[]
-
-  // ciblage "plat" (requêtes rapides)
   affectedGroupIds    String[] @db.ObjectId
   affectedSubGroupIds String[] @db.ObjectId
 
   recipientsCount Int?
-  // listIds “logiques” (listes des sous-groupes ciblés, pour info)
-  listIds         Int[]
-  // listId réellement utilisé pour l’envoi (temp)
-  tempListId      Int?
+
+  // On garde listIds/tempListId pour compatibilité,
+  // mais listIds sera désormais [] (plus de lists par subgroup).
+  listIds    Int[]
+  tempListId Int?
 
   scheduledAt     DateTime?
 
-  // timestamps globaux
   sentAt          DateTime?
   deliveredAt     DateTime?
   openedAt        DateTime?
@@ -212,8 +201,28 @@ model PluginParam {
 model EmailAddressTemplate {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  pattern     String   // pattern du local-part (avant @)
+  pattern     String
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+/**
+ * Pool de listes temporaires Brevo (limité à 30)
+ * => permet de ne pas toucher aux autres lists d'autres pôles.
+ */
+model BrevoTempList {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  brevoListId   Int      @unique
+  label         String
+
+  createdAt     DateTime @default(now())
+  lastUsedAt    DateTime?
+  reservedUntil DateTime
+
+  lastBrevoCampaignId String?
+
+  @@index([createdAt])
+  @@index([reservedUntil])
 }

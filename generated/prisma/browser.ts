@@ -97,3 +97,10 @@ export type PluginParam = Prisma.PluginParamModel
  * 
  */
 export type EmailAddressTemplate = Prisma.EmailAddressTemplateModel
+/**
+ * Model BrevoTempList
+ * *
+ *  * Pool de listes temporaires Brevo (limité à 30)
+ *  * => permet de ne pas toucher aux autres lists d'autres pôles.
+ */
+export type BrevoTempList = Prisma.BrevoTempListModel

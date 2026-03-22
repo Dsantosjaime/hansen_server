@@ -47,9 +47,6 @@ export class EmailService {
     private readonly brevoMarketing: BrevoMarketingService,
   ) {}
 
-  /**
-   * Résout la liste finale des subGroupIds ciblés (groupIds expand)
-   */
   private async resolveTargetSubGroupIds(dto: {
     groupIds?: string[];
     subGroupIds?: string[];
@@ -68,9 +65,6 @@ export class EmailService {
     return [...set];
   }
 
-  /**
-   * Construit la structure affected[] (group/subGroup names) + from + counts
-   */
   private async buildAffected(args: {
     subGroupIds: string[];
     fromBySubGroupId: Map<string, Date | null>;
@@ -139,10 +133,6 @@ export class EmailService {
     return { affected, affectedGroupIds, affectedSubGroupIds };
   }
 
-  /**
-   * Nouveau flow : envoi uniquement aux nouveaux contacts (par templateId + subGroupId)
-   * Retourne une réponse compatible avec l'existant.
-   */
   async sendMarketingCampaign(dto: ScheduleSendCampaignDto) {
     if (dto.scheduledAt) {
       throw new BadRequestException("Scheduled is not supported yet.");
@@ -154,17 +144,11 @@ export class EmailService {
       throw new NotFoundException("Empty selection (no subGroups resolved).");
     }
 
-    // 2) listIds “logiques” des sous-groupes (on les garde pour ne pas casser le retour)
-    const logicalListIds = await this.brevoMarketing.resolveBrevoListIds({
-      groupIds: dto.groupIds,
-      subGroupIds: dto.subGroupIds,
-    });
-
-    // 3) Récupère le template (subject)
+    // 2) Template (subject)
     const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
     const subject = tpl.subject ?? "(no subject)";
 
-    // 4) Récupère les cursors existants
+    // 3) Cursors existants
     const cursors = await this.prisma.templateSubGroupCursor.findMany({
       where: {
         templateId: dto.templateId,
@@ -177,13 +161,12 @@ export class EmailService {
     for (const c of cursors)
       lastSentAtBySubGroupId.set(c.subGroupId, c.lastSentAt);
 
-    // from = lastSentAt (moment T-1) à stocker dans EmailSend
     const fromBySubGroupId = new Map<string, Date | null>();
     for (const sgId of targetSubGroupIds) {
       fromBySubGroupId.set(sgId, lastSentAtBySubGroupId.get(sgId) ?? null);
     }
 
-    // 5) Requête "éligibles" en une fois (OR par sous-groupe, avec createdAt > lastSentAt)
+    // 4) Eligible "new-only"
     const or: Prisma.ContactWhereInput[] = targetSubGroupIds.map((sgId) => {
       const last = lastSentAtBySubGroupId.get(sgId);
       return {
@@ -209,7 +192,7 @@ export class EmailService {
       );
     }
 
-    // 6) Comptage par sous-groupe
+    // 5) Comptage par subgroup
     const countBySubGroupId = new Map<string, number>();
     for (const c of eligibleContacts) {
       countBySubGroupId.set(
@@ -218,18 +201,20 @@ export class EmailService {
       );
     }
 
-    // 7) Liste temporaire Brevo
+    // 6) Acquire temp list (pool <= 30)
     const now = new Date();
     const tmpLabel = `TMP:T${dto.templateId}:${now.toISOString()}`;
-    const tempListId = await this.brevoMarketing.createTemporaryList(tmpLabel);
 
-    // 8) Upsert des éligibles dans la liste temp
+    const { listId: tempListId, tempListDbId } =
+      await this.brevoMarketing.acquireTemporaryList({ label: tmpLabel });
+
+    // 7) Upsert des contacts éligibles dans la liste temp
     await this.brevoMarketing.bulkUpsertContactsToList(
       tempListId,
       eligibleContacts.map((c) => ({ email: c.email, attributes: {} })),
     );
 
-    // 9) Création + envoi campagne vers la liste temp
+    // 8) Envoi campagne vers la liste temp
     const attachmentUrl =
       dto.attachmentUrl && dto.attachmentUrl.trim().length > 0
         ? dto.attachmentUrl.trim()
@@ -244,7 +229,12 @@ export class EmailService {
         attachmentUrl,
       });
 
-    // 10) Enregistre EmailSend (run)
+    await this.brevoMarketing.markTempListUsed({
+      tempListDbId,
+      brevoCampaignId: String(campaignId),
+    });
+
+    // 9) Enregistre EmailSend (run)
     const targeting = await this.buildAffected({
       subGroupIds: targetSubGroupIds,
       fromBySubGroupId,
@@ -262,13 +252,16 @@ export class EmailService {
         affectedGroupIds: targeting.affectedGroupIds,
         affectedSubGroupIds: targeting.affectedSubGroupIds,
         recipientsCount: eligibleContacts.length,
-        listIds: logicalListIds,
+
+        // plus de lists logiques par subgroup
+        listIds: [],
         tempListId,
+
         scheduledAt: null,
       },
     });
 
-    // 11) Update cursors (lastSentAt = now) pour tous les sous-groupes ciblés
+    // 10) Update cursors (lastSentAt = now)
     for (const sgId of targetSubGroupIds) {
       await this.prisma.templateSubGroupCursor.upsert({
         where: {
@@ -286,20 +279,14 @@ export class EmailService {
       });
     }
 
-    // 12) Réponse compatible
     return {
       campaignId,
-      listIds: logicalListIds,
+      tempListId,
       scheduledAt: null,
       recipientsLogged: eligibleContacts.length,
     };
   }
 
-  /**
-   * Historique contact :
-   * - récupère les campaigns où le sous-groupe du contact a été ciblé
-   * - filtre par "from" pour ne garder que les runs où le contact était éligible (nouveau)
-   */
   async getContactHistory(contactId: string) {
     const contact = await this.prisma.contact.findUnique({
       where: { id: contactId },
@@ -316,9 +303,7 @@ export class EmailService {
       orderBy: { createdAt: "desc" },
     });
 
-    // Filtre en mémoire via from
     return candidates.filter((es) => {
-      // retrouve le "from" du sous-groupe du contact
       let from: Date | null = null;
 
       for (const g of es.affected ?? []) {
@@ -331,10 +316,7 @@ export class EmailService {
         if (from !== null) break;
       }
 
-      // si from null => 1er envoi => le contact (créé avant es.createdAt) est inclus
       if (!from) return true;
-
-      // sinon le contact a reçu uniquement s'il est "nouveau" après from
       return contact.createdAt > from;
     });
   }
@@ -404,18 +386,17 @@ export class EmailService {
         where: { brevoCampaignId },
         create: {
           brevoCampaignId,
-          templateId: 0, // inconnu via webhook seul
+          templateId: 0,
           subject: "(unknown)",
           status: eventType,
           affected: [],
           affectedGroupIds: [],
           affectedSubGroupIds: [],
           listIds: [],
+          tempListId: null,
           ...dataToUpdate,
         },
-        update: {
-          ...dataToUpdate,
-        },
+        update: { ...dataToUpdate },
       });
 
       results.push({ ok: true, email, campaignId, eventType });

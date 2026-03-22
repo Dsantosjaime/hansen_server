@@ -51,8 +51,8 @@ export class SubGroupsService {
       include: { group: true },
     });
 
-    await this.brevoMarketing.ensureBrevoListForSubGroup(created.id);
-
+    // IMPORTANT: on ne crée plus de list Brevo par subgroup !
+    // (sinon on retombe sur la limite 300)
     return this.prisma.subGroup.findUnique({
       where: { id: created.id },
       include: { group: true },

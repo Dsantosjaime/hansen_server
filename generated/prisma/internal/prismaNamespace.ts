@@ -401,7 +401,8 @@ export const ModelName = {
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
   PluginParam: 'PluginParam',
-  EmailAddressTemplate: 'EmailAddressTemplate'
+  EmailAddressTemplate: 'EmailAddressTemplate',
+  BrevoTempList: 'BrevoTempList'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "templateSubGroupCursor" | "campaignAttachment" | "toDo" | "pluginParam" | "emailAddressTemplate"
+    modelProps: "user" | "permissionGroup" | "role" | "group" | "subGroup" | "contact" | "emailSend" | "templateSubGroupCursor" | "campaignAttachment" | "toDo" | "pluginParam" | "emailAddressTemplate" | "brevoTempList"
     txIsolationLevel: never
   }
   model: {
@@ -1309,6 +1310,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    BrevoTempList: {
+      payload: Prisma.$BrevoTempListPayload<ExtArgs>
+      fields: Prisma.BrevoTempListFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BrevoTempListFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BrevoTempListFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        findFirst: {
+          args: Prisma.BrevoTempListFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BrevoTempListFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        findMany: {
+          args: Prisma.BrevoTempListFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>[]
+        }
+        create: {
+          args: Prisma.BrevoTempListCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        createMany: {
+          args: Prisma.BrevoTempListCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.BrevoTempListDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        update: {
+          args: Prisma.BrevoTempListUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        deleteMany: {
+          args: Prisma.BrevoTempListDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BrevoTempListUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.BrevoTempListUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BrevoTempListPayload>
+        }
+        aggregate: {
+          args: Prisma.BrevoTempListAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBrevoTempList>
+        }
+        groupBy: {
+          args: Prisma.BrevoTempListGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BrevoTempListGroupByOutputType>[]
+        }
+        findRaw: {
+          args: Prisma.BrevoTempListFindRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        aggregateRaw: {
+          args: Prisma.BrevoTempListAggregateRawArgs<ExtArgs>
+          result: Prisma.JsonObject
+        }
+        count: {
+          args: Prisma.BrevoTempListCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BrevoTempListCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1479,6 +1554,19 @@ export const EmailAddressTemplateScalarFieldEnum = {
 } as const
 
 export type EmailAddressTemplateScalarFieldEnum = (typeof EmailAddressTemplateScalarFieldEnum)[keyof typeof EmailAddressTemplateScalarFieldEnum]
+
+
+export const BrevoTempListScalarFieldEnum = {
+  id: 'id',
+  brevoListId: 'brevoListId',
+  label: 'label',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt',
+  reservedUntil: 'reservedUntil',
+  lastBrevoCampaignId: 'lastBrevoCampaignId'
+} as const
+
+export type BrevoTempListScalarFieldEnum = (typeof BrevoTempListScalarFieldEnum)[keyof typeof BrevoTempListScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1705,6 +1793,7 @@ export type GlobalOmitConfig = {
   toDo?: Prisma.ToDoOmit
   pluginParam?: Prisma.PluginParamOmit
   emailAddressTemplate?: Prisma.EmailAddressTemplateOmit
+  brevoTempList?: Prisma.BrevoTempListOmit
 }
 
 /* Types for Logging */

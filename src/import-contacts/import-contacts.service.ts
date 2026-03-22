@@ -21,7 +21,7 @@ type ImportContactsFromCsvArgs = {
   groupName: string;
   csvBuffer: Buffer;
   dryRun?: boolean;
-  debug?: boolean; // <-- AJOUT: active les logs détaillés
+  debug?: boolean;
 };
 
 type MinimalGroup = { id: string; name: string };
@@ -48,7 +48,7 @@ function normalizeEmail(s: unknown): string {
   const v = cellToString(s).trim().toLowerCase();
   if (!v) return "";
   if (v === "x") return "";
-  return v.replace(/\s+/g, ""); // enlève espaces + retours ligne
+  return v.replace(/\s+/g, "");
 }
 
 function isValidEmail(email: string): boolean {
@@ -129,7 +129,6 @@ function parseCsvWithBestDelimiter(csvText: string): {
         ["mail", "email", "e-mail"].includes(h),
       );
 
-      // score: priorité si "mail" trouvé, puis nombre de colonnes
       const score = (idxMail >= 0 ? 1000 : 0) + header.length;
 
       if (!best || score > best.score) {
@@ -153,20 +152,6 @@ function allBlankExcept(row: string[], keepIndex: number): boolean {
   return (row ?? []).every(
     (cell, idx) => idx === keepIndex || isBlankCell(cell),
   );
-}
-
-// Helpers debug
-function maskEmail(email: string): string {
-  const e = (email ?? "").trim();
-  if (!e) return "";
-  const [local, domain] = e.split("@");
-  if (!domain) return e.slice(0, 2) + "***";
-  return `${local?.slice(0, 2) ?? ""}***@${domain}`;
-}
-
-function rowPreview(row: string[], max = 8): string {
-  const cells = (row ?? []).slice(0, max).map((c) => (c ?? "").trim());
-  return cells.join(" | ") + ((row?.length ?? 0) > max ? " | ..." : "");
 }
 
 @Injectable()
@@ -210,9 +195,6 @@ export class ImportContactsService {
     });
 
     if (existing) {
-      // NOTE: ici, l'appel Brevo peut throw. On le laisse tel quel pour garder le comportement.
-      await this.brevo.ensureBrevoListForSubGroup(existing.id);
-
       return {
         subGroup: {
           id: existing.id,
@@ -244,7 +226,7 @@ export class ImportContactsService {
     args: ImportContactsFromCsvArgs,
   ): Promise<ImportContactsCsvResponseDto> {
     const dryRun = !!args.dryRun;
-    const debug = true;
+    const debug = !!args.debug;
     const dlog = (msg: string) => {
       if (debug) this.logger.log(`[IMPORT_DEBUG] ${msg}`);
     };
@@ -258,21 +240,16 @@ export class ImportContactsService {
     const csvText = args.csvBuffer.toString("utf-8");
     const { delimiter, rows } = parseCsvWithBestDelimiter(csvText);
 
-    dlog(`delimiter="${delimiter}" rows=${rows.length}`);
-
     if (rows.length < 2) {
       throw new BadRequestException(
         "CSV must have at least a header row + data",
       );
     }
 
-    dlog(`headerRow="${(rows[0] ?? []).join(" | ")}"`);
-
     const headerRow = rows[0].map((h) => normalizeHeader(h));
     const colIndex = (aliases: string[]) =>
       headerRow.findIndex((h) => aliases.includes(h));
 
-    // IMPORTANT: la colonne "label" n'est pas forcément [0] (souvent une première colonne vide existe)
     const idxLabel = colIndex(["ville", "entreprise", "societe", "company"]);
     const labelIndex = idxLabel >= 0 ? idxLabel : 0;
 
@@ -285,10 +262,6 @@ export class ImportContactsService {
     const idxAccuse = colIndex(["accuse"]);
     const idxContacte = colIndex(["contacte"]);
 
-    dlog(
-      `indexes: labelIndex=${labelIndex} idxMail=${idxMail} idxPrenom=${idxPrenom} idxNom=${idxNom} idxFonction=${idxFonction} idxPortable=${idxPortable} idxFixe=${idxFixe}`,
-    );
-
     if (idxMail < 0) {
       throw new BadRequestException(
         `CSV must contain a "Mail" column. Found: ${rows[0].join(" | ")}`,
@@ -296,7 +269,6 @@ export class ImportContactsService {
     }
 
     const group = await this.ensureGroupByName(groupName);
-    dlog(`group resolved: id=${group.id} name="${group.name}"`);
 
     let currentSubGroup: MinimalSubGroup | null = null;
 
@@ -313,109 +285,31 @@ export class ImportContactsService {
       contactsSkippedInvalidEmail: 0,
       contactsSkippedNoSubGroup: 0,
 
+      // Brevo n'est plus sync "par subgroup list" pendant l'import
       brevoPrepared: 0,
       errors: [],
     };
 
     const subGroupCache = new Map<string, MinimalSubGroup>();
-    const listIdBySubGroupId = new Map<string, number>();
-
-    const brevoPayloadByListId = new Map<
-      number,
-      Array<{ email: string; attributes?: Record<string, unknown> }>
-    >();
-
-    const ensureListId = async (subGroupId: string) => {
-      let listId = listIdBySubGroupId.get(subGroupId);
-      if (!listId) {
-        dlog(`BREVO ensure list start subGroupId=${subGroupId}`);
-        listId = await this.brevo.ensureBrevoListForSubGroup(subGroupId);
-        listIdBySubGroupId.set(subGroupId, listId);
-        dlog(`BREVO ensure list ok subGroupId=${subGroupId} listId=${listId}`);
-      }
-      return listId;
-    };
 
     const getLabel = (row: string[]) => (row?.[labelIndex] ?? "").trim();
 
     const isSubGroupHeaderRow = (row: string[]) => {
       const label = getLabel(row);
       if (!label) return false;
-
-      // header = une ligne où seule la colonne "label" est remplie
       return allBlankExcept(row, labelIndex);
-    };
-
-    /**
-     * Sous-groupe "confirmé" de manière tolérante:
-     * - ignore headers répétés
-     * - ignore lignes vides
-     * - confirme si un email valide apparaît avant le prochain sous-groupe
-     * - gère aussi les cas où l'email est décalé dans une autre colonne
-     */
-    const confirmSubGroup = (startIndex: number, candidateName: string) => {
-      const cand = (candidateName ?? "").trim();
-      if (!cand) return false;
-
-      const end = Math.min(rows.length, startIndex + 1 + 200);
-
-      for (let j = startIndex + 1; j < end; j++) {
-        const r = rows[j];
-        if (!r?.length) continue;
-
-        if (rowLooksLikeColumnsHeader(r)) continue;
-        if (r.every((c) => isBlankCell(c))) continue;
-
-        // stop si on atteint un autre sous-groupe
-        if (isSubGroupHeaderRow(r)) {
-          const next = getLabel(r);
-          if (next && next !== cand) return false;
-        }
-
-        const label = getLabel(r);
-
-        // email dans la colonne Mail
-        const emailInMail = normalizeEmail(idxMail >= 0 ? r[idxMail] : "");
-        if (emailInMail && isValidEmail(emailInMail)) {
-          if (!label || label === cand) return true;
-        }
-
-        // fallback: email ailleurs dans la ligne si label matche
-        if (label === cand) {
-          const anyEmail = (r ?? [])
-            .map((c) => normalizeEmail(c))
-            .find((e) => e && isValidEmail(e));
-          if (anyEmail) return true;
-        }
-      }
-
-      return false;
     };
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] ?? [];
       if (!row.length) continue;
 
-      if (rowLooksLikeColumnsHeader(row)) {
-        dlog(`row=${i + 1} SKIP headerRepeated`);
-        continue;
-      }
+      if (rowLooksLikeColumnsHeader(row)) continue;
 
-      // 1) SubGroup header
+      // 1) Subgroup header
       if (isSubGroupHeaderRow(row)) {
         const candidate = getLabel(row);
-        dlog(
-          `row=${i + 1} SUBGROUP candidate="${candidate}" preview="${rowPreview(row)}"`,
-        );
-
-        const ok = confirmSubGroup(i, candidate);
-        dlog(`row=${i + 1} SUBGROUP confirm ok=${ok} name="${candidate}"`);
-
-        if (!ok) {
-          currentSubGroup = null;
-          dlog(`row=${i + 1} SUBGROUP ignored (not confirmed)`);
-          continue;
-        }
+        if (!candidate) continue;
 
         const cacheKey = `${group.id}:${candidate}`;
         const cached = subGroupCache.get(cacheKey);
@@ -423,9 +317,6 @@ export class ImportContactsService {
         if (cached) {
           currentSubGroup = cached;
           stats.subGroupsReused++;
-          dlog(
-            `row=${i + 1} SUBGROUP set cached id=${cached.id} name="${cached.name}"`,
-          );
           continue;
         }
 
@@ -438,12 +329,10 @@ export class ImportContactsService {
           currentSubGroup = sg;
           subGroupCache.set(cacheKey, sg);
           stats.subGroupsCreated++;
-          dlog(`row=${i + 1} SUBGROUP set dryRun name="${candidate}"`);
           continue;
         }
 
         try {
-          dlog(`row=${i + 1} SUBGROUP ensure start name="${candidate}"`);
           const { subGroup: sg, created } = await this.ensureSubGroupByName(
             group.id,
             candidate,
@@ -454,18 +343,7 @@ export class ImportContactsService {
 
           if (created) stats.subGroupsCreated++;
           else stats.subGroupsReused++;
-
-          dlog(
-            `row=${i + 1} SUBGROUP ensure ok id=${sg.id} created=${created}`,
-          );
-
-          // ensure list Brevo (peut planter ici)
-          await ensureListId(sg.id);
         } catch (e: any) {
-          dlog(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `row=${i + 1} SUBGROUP ensure FAIL name="${candidate}" error="${e?.message ?? String(e)}"`,
-          );
           stats.errors.push({
             row: i + 1,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -477,12 +355,7 @@ export class ImportContactsService {
       }
 
       // 2) Contact row
-      const label = getLabel(row);
-
-      // email depuis colonne Mail
       const emailInMail = normalizeEmail(idxMail >= 0 ? row[idxMail] : "");
-
-      // fallback email ailleurs (ligne décalée)
       const emailAnywhere =
         (row ?? [])
           .map((c) => normalizeEmail(c))
@@ -490,86 +363,26 @@ export class ImportContactsService {
 
       const email = emailInMail || emailAnywhere;
 
-      dlog(
-        `row=${i + 1} CONTACT emailDetect label="${label}" mailCol="${maskEmail(emailInMail)}" any="${maskEmail(emailAnywhere)}" chosen="${maskEmail(email)}" currentSubGroup="${currentSubGroup?.name ?? ""}" preview="${rowPreview(row)}"`,
-      );
-
       if (!email) {
         stats.contactsSkippedNoEmail++;
-        dlog(`row=${i + 1} SKIP noEmail label="${label}"`);
         continue;
       }
-
       if (!isValidEmail(email)) {
         stats.contactsSkippedInvalidEmail++;
-        dlog(
-          `row=${i + 1} SKIP invalidEmail value="${email}" label="${label}"`,
-        );
         continue;
       }
 
-      // Fallback: infère le SubGroup depuis la colonne label
       if (!currentSubGroup) {
-        const inferred = label;
-
+        const inferred = getLabel(row);
         if (inferred) {
           const cacheKey = `${group.id}:${inferred}`;
           const cached = subGroupCache.get(cacheKey);
-
-          if (cached) {
-            currentSubGroup = cached;
-            dlog(
-              `row=${i + 1} SUBGROUP inferred cached id=${cached.id} name="${cached.name}"`,
-            );
-          } else if (dryRun) {
-            const sg: MinimalSubGroup = {
-              id: "__dryRun__",
-              name: inferred,
-              groupId: group.id,
-            };
-            currentSubGroup = sg;
-            subGroupCache.set(cacheKey, sg);
-            stats.subGroupsCreated++;
-            dlog(`row=${i + 1} SUBGROUP inferred dryRun name="${inferred}"`);
-          } else {
-            try {
-              dlog(`row=${i + 1} SUBGROUP inferred ensure start "${inferred}"`);
-              const { subGroup: sg, created } = await this.ensureSubGroupByName(
-                group.id,
-                inferred,
-              );
-
-              currentSubGroup = sg;
-              subGroupCache.set(cacheKey, sg);
-
-              if (created) stats.subGroupsCreated++;
-              else stats.subGroupsReused++;
-
-              dlog(
-                `row=${i + 1} SUBGROUP inferred ensure ok id=${sg.id} created=${created}`,
-              );
-
-              await ensureListId(sg.id);
-            } catch (e: any) {
-              dlog(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                `row=${i + 1} SUBGROUP inferred ensure FAIL "${inferred}" error="${e?.message ?? String(e)}"`,
-              );
-              stats.errors.push({
-                row: i + 1,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                reason: `SubGroup inferred ensure failed: ${e?.message ?? String(e)}`,
-              });
-            }
-          }
+          if (cached) currentSubGroup = cached;
         }
       }
 
       if (!currentSubGroup || currentSubGroup.id === "__dryRun__") {
         stats.contactsSkippedNoSubGroup++;
-        dlog(
-          `row=${i + 1} SKIP noSubGroup label="${label}" email="${maskEmail(email)}"`,
-        );
         continue;
       }
 
@@ -591,31 +404,10 @@ export class ImportContactsService {
       try {
         if (dryRun) {
           stats.contactsUpserted++;
-          dlog(
-            `row=${i + 1} DRYRUN upsert ok email="${maskEmail(email)}" subGroup="${currentSubGroup.name}"`,
-          );
           continue;
         }
 
-        const existing = await this.prisma.contact.findUnique({
-          where: { email },
-          select: { subGroupId: true },
-        });
-
-        if (existing && existing.subGroupId !== currentSubGroup.id) {
-          try {
-            const oldListId = await this.brevo.ensureBrevoListForSubGroup(
-              existing.subGroupId,
-            );
-            await this.brevo.removeEmailsFromList(oldListId, [email]);
-          } catch (e) {
-            this.logger.warn(
-              `Could not remove ${email} from previous subGroup list: ${String(e)}`,
-            );
-          }
-        }
-
-        const saved = await this.prisma.contact.upsert({
+        await this.prisma.contact.upsert({
           where: { email },
           create: {
             firstName,
@@ -642,54 +434,13 @@ export class ImportContactsService {
         });
 
         stats.contactsUpserted++;
-        dlog(
-          `row=${i + 1} CONTACT upsert ok email="${maskEmail(saved.email)}" subGroup="${currentSubGroup.name}"`,
-        );
-
-        const listId = await ensureListId(currentSubGroup.id);
-
-        const payload = brevoPayloadByListId.get(listId) ?? [];
-        payload.push({
-          email: saved.email,
-          attributes: {
-            FIRSTNAME: saved.firstName,
-            LASTNAME: saved.lastName,
-            FUNCTION: saved.function,
-            STATUS: saved.status,
-            PHONE: (saved.phoneNumber ?? []).join(" / "),
-          },
-        });
-        brevoPayloadByListId.set(listId, payload);
-
-        stats.brevoPrepared++;
       } catch (e: any) {
-        dlog(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          `row=${i + 1} CONTACT upsert FAIL email="${maskEmail(email)}" subGroup="${currentSubGroup?.name ?? ""}" error="${e?.message ?? String(e)}"`,
-        );
         stats.errors.push({
           row: i + 1,
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           reason: `Contact upsert failed: ${e?.message ?? String(e)}`,
         });
       }
-    }
-
-    if (!dryRun) {
-      let success = 0;
-      let failed = 0;
-
-      for (const [listId, contacts] of brevoPayloadByListId.entries()) {
-        const res = await this.brevo.bulkUpsertContactsToList(listId, contacts);
-        success += res.success;
-        failed += res.failed;
-      }
-
-      stats.brevoSync = {
-        lists: brevoPayloadByListId.size,
-        success,
-        failed,
-      };
     }
 
     dlog(

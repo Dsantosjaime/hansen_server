@@ -60,7 +60,8 @@ export const ModelName = {
   CampaignAttachment: 'CampaignAttachment',
   ToDo: 'ToDo',
   PluginParam: 'PluginParam',
-  EmailAddressTemplate: 'EmailAddressTemplate'
+  EmailAddressTemplate: 'EmailAddressTemplate',
+  BrevoTempList: 'BrevoTempList'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -222,6 +223,19 @@ export const EmailAddressTemplateScalarFieldEnum = {
 } as const
 
 export type EmailAddressTemplateScalarFieldEnum = (typeof EmailAddressTemplateScalarFieldEnum)[keyof typeof EmailAddressTemplateScalarFieldEnum]
+
+
+export const BrevoTempListScalarFieldEnum = {
+  id: 'id',
+  brevoListId: 'brevoListId',
+  label: 'label',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt',
+  reservedUntil: 'reservedUntil',
+  lastBrevoCampaignId: 'lastBrevoCampaignId'
+} as const
+
+export type BrevoTempListScalarFieldEnum = (typeof BrevoTempListScalarFieldEnum)[keyof typeof BrevoTempListScalarFieldEnum]
 
 
 export const SortOrder = {

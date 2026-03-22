@@ -49,11 +49,9 @@ export class ContactsService {
     });
     if (!c) return;
 
-    const listId = await this.brevo.ensureBrevoListForSubGroup(c.subGroupId);
-
-    await this.brevo.upsertContactToList({
+    // Plus de list par subgroup -> on upsert juste le contact (sans listId).
+    await this.brevo.upsertContact({
       email: c.email,
-      listId,
       attributes: this.toBrevoAttributes(c),
     });
   }
@@ -178,13 +176,7 @@ export class ContactsService {
 
     const deleted = await this.prisma.contact.delete({ where: { id } });
 
-    this.brevo
-      .ensureBrevoListForSubGroup(existing.subGroupId)
-      .then((listId) =>
-        this.brevo.removeEmailsFromList(listId, [existing.email]),
-      )
-      .catch((e) => this.logger.warn(`Brevo remove from list failed: ${e}`));
-
+    // Plus de remove-from-list (car plus de list subgroup)
     this.brevo
       .deleteBrevoContactByEmail(existing.email)
       .catch((e) => this.logger.warn(`Brevo delete contact failed: ${e}`));

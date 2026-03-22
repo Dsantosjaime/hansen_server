@@ -126,7 +126,6 @@ export const brevoClientProvider: Provider = {
       },
 
       async deleteList(listId: number): Promise<void> {
-        // SDK varie selon versions, on force via any + String
         await (contactsApi as any).deleteList(String(listId));
       },
 
@@ -136,6 +135,19 @@ export const brevoClientProvider: Provider = {
       ): Promise<void> {
         if (!emails.length) return;
         await contactsApi.removeContactFromList(listId, { emails } as any);
+      },
+
+      async upsertContact(args: {
+        email: string;
+        attributes?: Record<string, unknown>;
+      }): Promise<void> {
+        const payload: any = {
+          email: args.email,
+          attributes: args.attributes ?? {},
+          updateEnabled: true,
+        };
+
+        await contactsApi.createContact(payload);
       },
 
       async upsertContactToList(args: {

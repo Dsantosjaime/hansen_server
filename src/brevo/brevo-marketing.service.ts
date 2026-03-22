@@ -20,6 +20,10 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
+function addHours(d: Date, hours: number) {
+  return new Date(d.getTime() + hours * 3600 * 1000);
+}
+
 @Injectable()
 export class BrevoMarketingService {
   private readonly logger = new Logger(BrevoMarketingService.name);
@@ -27,6 +31,9 @@ export class BrevoMarketingService {
   private readonly senderEmail: string;
   private readonly senderName: string;
   private readonly chunkSize: number;
+
+  private readonly tempPoolSize: number;
+  private readonly tempReservationHours: number;
 
   constructor(
     @Inject(BREVO_CLIENT) private readonly brevo: BrevoClient,
@@ -42,10 +49,18 @@ export class BrevoMarketingService {
     this.chunkSize = Number(
       this.config.get<string>("BREVO_SYNC_CHUNK_SIZE") ?? 100,
     );
+
+    // Pool de 30 (par défaut) + réservation (par défaut 48h)
+    this.tempPoolSize = Number(
+      this.config.get<string>("BREVO_TEMP_LIST_POOL_SIZE") ?? 30,
+    );
+    this.tempReservationHours = Number(
+      this.config.get<string>("BREVO_TEMP_LIST_RESERVATION_HOURS") ?? 48,
+    );
   }
 
   /**
-   * Senders (From): exposés pour UsersService / RoleService
+   * Senders (From)
    */
   async createSender(args: { name: string; email: string }): Promise<number> {
     const created = await this.brevo.createSender(args);
@@ -77,6 +92,9 @@ export class BrevoMarketingService {
     return this.brevo.getEmailTemplate(templateId);
   }
 
+  /**
+   * LEGACY (à ne plus appeler dans le nouveau flow) : list par subgroup
+   */
   async ensureBrevoListForSubGroup(subGroupId: string): Promise<number> {
     const subGroup = await this.prisma.subGroup.findUnique({
       where: { id: subGroupId },
@@ -105,35 +123,8 @@ export class BrevoMarketingService {
     return listId;
   }
 
-  async resolveBrevoListIds(input: {
-    groupIds?: string[];
-    subGroupIds?: string[];
-  }): Promise<number[]> {
-    const listIds = new Set<number>();
-
-    const groupIds = input.groupIds ?? [];
-    const subGroupIds = input.subGroupIds ?? [];
-
-    if (groupIds.length) {
-      const subGroups = await this.prisma.subGroup.findMany({
-        where: { groupId: { in: groupIds } },
-        select: { id: true },
-      });
-
-      for (const sg of subGroups) {
-        listIds.add(await this.ensureBrevoListForSubGroup(sg.id));
-      }
-    }
-
-    for (const sgId of subGroupIds) {
-      listIds.add(await this.ensureBrevoListForSubGroup(sgId));
-    }
-
-    return [...listIds];
-  }
-
   /**
-   * Crée une liste temporaire (utilisée pour envoyer uniquement aux nouveaux contacts)
+   * Crée une liste temporaire brute (sans pool)
    */
   async createTemporaryList(label: string): Promise<number> {
     const created = await this.brevo.createList(label);
@@ -144,56 +135,155 @@ export class BrevoMarketingService {
   }
 
   /**
-   * NOUVEAU: supprime une liste Brevo
+   * Pool: acquire une liste temporaire (crée ou recycle) avec limite à 30.
    */
+  async acquireTemporaryList(args: {
+    label: string;
+  }): Promise<{ listId: number; tempListDbId: string }> {
+    const now = new Date();
+
+    const count = await this.prisma.brevoTempList.count();
+
+    // 1) Si on est sous la limite : create direct
+    if (count < this.tempPoolSize) {
+      const listId = await this.createTemporaryList(args.label);
+
+      const row = await this.prisma.brevoTempList.create({
+        data: {
+          brevoListId: listId,
+          label: args.label,
+          createdAt: now,
+          lastUsedAt: now,
+          reservedUntil: addHours(now, this.tempReservationHours),
+          lastBrevoCampaignId: null,
+        },
+        select: { id: true },
+      });
+
+      return { listId, tempListDbId: row.id };
+    }
+
+    // 2) Recycle la plus ancienne "recyclable"
+    const candidate = await this.prisma.brevoTempList.findFirst({
+      where: { reservedUntil: { lt: now } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, brevoListId: true },
+    });
+
+    if (!candidate) {
+      throw new BadRequestException(
+        `Temporary list pool exhausted (${this.tempPoolSize}). Retry later.`,
+      );
+    }
+
+    // Supprime côté Brevo (best effort), puis DB
+    try {
+      await this.brevo.deleteList(candidate.brevoListId);
+    } catch (e: any) {
+      this.logger.warn(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `deleteBrevoList failed for listId=${candidate.brevoListId}: ${e?.message ?? String(e)}`,
+      );
+    }
+
+    await this.prisma.brevoTempList.delete({ where: { id: candidate.id } });
+
+    // Recrée une nouvelle liste
+    const newListId = await this.createTemporaryList(args.label);
+
+    const row = await this.prisma.brevoTempList.create({
+      data: {
+        brevoListId: newListId,
+        label: args.label,
+        createdAt: now,
+        lastUsedAt: now,
+        reservedUntil: addHours(now, this.tempReservationHours),
+        lastBrevoCampaignId: null,
+      },
+      select: { id: true },
+    });
+
+    return { listId: newListId, tempListDbId: row.id };
+  }
+
+  async markTempListUsed(args: {
+    tempListDbId: string;
+    brevoCampaignId: string;
+  }) {
+    const now = new Date();
+    await this.prisma.brevoTempList.update({
+      where: { id: args.tempListDbId },
+      data: {
+        lastUsedAt: now,
+        reservedUntil: addHours(now, this.tempReservationHours),
+        lastBrevoCampaignId: args.brevoCampaignId,
+      },
+    });
+  }
+
+  async upsertContact(args: {
+    email: string;
+    attributes?: Record<string, unknown>;
+  }) {
+    await this.brevo.upsertContact(args);
+  }
+
+  async deleteBrevoContactByEmail(email: string) {
+    await this.brevo.deleteContactByEmail(email);
+  }
+
+  async upsertContactToList(params: {
+    email: string;
+    listId: number;
+    attributes?: Record<string, unknown>;
+  }) {
+    await this.brevo.upsertContactToList(params);
+  }
+
+  async removeEmailsFromList(listId: number, emails: string[]) {
+    if (!emails.length) return;
+    await this.brevo.removeEmailsFromList(listId, emails);
+  }
+
   async deleteBrevoList(listId: number): Promise<void> {
     await this.brevo.deleteList(listId);
   }
 
-  /**
-   * NOUVEAU: supprime la liste Brevo associée à un SubGroup (si elle existe),
-   * puis nettoie la DB (brevoListId = null)
-   */
-  async deleteBrevoListForSubGroup(subGroupId: string): Promise<{
-    subGroupId: string;
-    listId: number | null;
-    deletedRemote: boolean;
-  }> {
-    const sg = await this.prisma.subGroup.findUnique({
-      where: { id: subGroupId },
-      select: { id: true, brevoListId: true },
-    });
+  async bulkUpsertContactsToList(
+    listId: number,
+    contacts: Array<{ email: string; attributes?: Record<string, unknown> }>,
+  ) {
+    const batches = chunkArray(contacts, this.chunkSize);
 
-    if (!sg) throw new NotFoundException(`SubGroup ${subGroupId} not found`);
+    let success = 0;
+    let failed = 0;
 
-    if (!sg.brevoListId) {
-      return { subGroupId, listId: null, deletedRemote: false };
+    for (const batch of batches) {
+      for (const c of batch) {
+        try {
+          await this.upsertContactToList({
+            email: c.email,
+            listId,
+            attributes: c.attributes,
+          });
+          success++;
+        } catch {
+          failed++;
+        }
+      }
     }
 
-    const listId = sg.brevoListId;
-
-    let deletedRemote = false;
-    try {
-      await this.brevo.deleteList(listId);
-      deletedRemote = true;
-    } catch (e: any) {
-      // Si la liste n'existe déjà plus, on veut quand même nettoyer la DB
-      this.logger.warn(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `deleteList failed for listId=${listId} subGroupId=${subGroupId}: ${e?.message ?? String(e)}`,
-      );
-    }
-
-    await this.prisma.subGroup.update({
-      where: { id: subGroupId },
-      data: { brevoListId: null },
-    });
-
-    return { subGroupId, listId, deletedRemote };
+    return {
+      listId,
+      total: contacts.length,
+      success,
+      failed,
+      chunkSize: this.chunkSize,
+    };
   }
 
   /**
-   * NOUVEAU: nettoyage global => supprime toutes les listes Brevo stockées sur subGroup.brevoListId
+   * Nettoyage global => supprime toutes les lists Brevo stockées sur subGroup.brevoListId
    * - dryRun=true : ne supprime rien, mais retourne ce qui serait supprimé
    */
   async cleanupAllSubGroupLists(args?: { dryRun?: boolean }): Promise<{
@@ -265,7 +355,6 @@ export class BrevoMarketingService {
         });
         dbCleared++;
 
-        // si on avait déjà push un résultat d'erreur, on le complète sinon on push normal
         if (!results.find((r) => r.subGroupId === sg.id)) {
           results.push({
             subGroupId: sg.id,
@@ -300,16 +389,12 @@ export class BrevoMarketingService {
     };
   }
 
-  /**
-   * AJOUT: alias "propre" pour la route controller
-   * => supprime toutes les lists associées aux subGroups via brevoListId, puis met brevoListId=null en DB.
-   */
   async cleanupSubGroupBrevoLists(args?: { dryRun?: boolean }) {
     return this.cleanupAllSubGroupLists(args);
   }
 
   /**
-   * Crée une campagne depuis un template, ciblée sur DES listIds donnés, puis envoi immédiat
+   * Campagne vers listIds (temp list)
    */
   async createAndSendCampaignFromTemplateToLists(args: {
     templateId: number;
@@ -350,104 +435,10 @@ export class BrevoMarketingService {
     return { campaignId };
   }
 
-  async upsertContactToList(params: {
-    email: string;
-    listId: number;
-    attributes?: Record<string, unknown>;
-  }) {
-    await this.brevo.upsertContactToList(params);
-  }
-
-  async removeEmailsFromList(listId: number, emails: string[]) {
-    if (!emails.length) return;
-    await this.brevo.removeEmailsFromList(listId, emails);
-  }
-
-  async deleteBrevoContactByEmail(email: string) {
-    await this.brevo.deleteContactByEmail(email);
-  }
-
-  async bulkUpsertContactsToList(
-    listId: number,
-    contacts: Array<{ email: string; attributes?: Record<string, unknown> }>,
-  ) {
-    const batches = chunkArray(contacts, this.chunkSize);
-
-    let success = 0;
-    let failed = 0;
-
-    for (const batch of batches) {
-      for (const c of batch) {
-        try {
-          await this.upsertContactToList({
-            email: c.email,
-            listId,
-            attributes: c.attributes,
-          });
-          success++;
-        } catch {
-          failed++;
-        }
-      }
-    }
-
-    return {
-      listId,
-      total: contacts.length,
-      success,
-      failed,
-      chunkSize: this.chunkSize,
-    };
-  }
-
-  async resyncSubGroup(subGroupId: string) {
-    const listId = await this.ensureBrevoListForSubGroup(subGroupId);
-
-    const contacts = await this.prisma.contact.findMany({
-      where: { subGroupId },
-      select: {
-        email: true,
-        firstName: true,
-        lastName: true,
-        function: true,
-        status: true,
-        phoneNumber: true,
-      },
-    });
-
-    const payload = contacts.map((c) => ({
-      email: c.email,
-      attributes: {
-        FIRSTNAME: c.firstName,
-        LASTNAME: c.lastName,
-        FUNCTION: c.function,
-        STATUS: c.status,
-        PHONE: (c.phoneNumber ?? []).join(" / "),
-      },
-    }));
-
-    return this.bulkUpsertContactsToList(listId, payload);
-  }
-
-  async resyncAllSubGroups() {
-    const subGroups = await this.prisma.subGroup.findMany({
-      select: { id: true },
-    });
-
-    type ResyncSubGroupResult = Awaited<
-      ReturnType<BrevoMarketingService["resyncSubGroup"]>
-    >;
-
-    const results: ResyncSubGroupResult[] = [];
-
-    for (const sg of subGroups) {
-      results.push(await this.resyncSubGroup(sg.id));
-    }
-
-    return { subGroups: subGroups.length, results };
-  }
-
-  async sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
+  /**
+   * (Legacy) conserver si utilisé ailleurs
+   */
+  sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
     campaignId: number;
     listIds: number[];
     scheduledAt: null;
@@ -458,73 +449,9 @@ export class BrevoMarketingService {
       throw new BadRequestException("Scheduled is not supported yet.");
     }
 
-    const listIds = await this.resolveBrevoListIds({
-      groupIds: dto.groupIds,
-      subGroupIds: dto.subGroupIds,
-    });
-
-    if (!listIds.length) {
-      throw new NotFoundException(
-        "No target lists resolved (empty selection).",
-      );
-    }
-
-    const contacts = await this.resolveContactsForSelection({
-      groupIds: dto.groupIds,
-      subGroupIds: dto.subGroupIds,
-    });
-
-    const tpl = await this.brevo.getEmailTemplate(dto.templateId);
-
-    const created = await this.brevo.createCampaignFromTemplate({
-      name: dto.name ?? `Campaign from template ${dto.templateId}`,
-      sender: { name: this.senderName, email: this.senderEmail },
-      listIds,
-      templateId: dto.templateId,
-      subject: tpl.subject,
-      ...(dto.attachmentUrl ? { attachmentUrl: dto.attachmentUrl } : {}),
-    });
-
-    const campaignId = Number(created.id);
-    if (!campaignId) {
-      throw new InternalServerErrorException(
-        "Brevo did not return campaign id",
-      );
-    }
-
-    await this.brevo.sendCampaignNow(campaignId);
-
-    return {
-      campaignId,
-      listIds,
-      scheduledAt: null,
-      subject: tpl.subject,
-      recipients: contacts.map((c) => ({ contactId: c.id, email: c.email })),
-    };
-  }
-
-  private async resolveContactsForSelection(input: {
-    groupIds?: string[];
-    subGroupIds?: string[];
-  }) {
-    const groupIds = input.groupIds ?? [];
-    const subGroupIds = new Set<string>(input.subGroupIds ?? []);
-
-    if (groupIds.length) {
-      const sgs = await this.prisma.subGroup.findMany({
-        where: { groupId: { in: groupIds } },
-        select: { id: true },
-      });
-      for (const sg of sgs) subGroupIds.add(sg.id);
-    }
-
-    const ids = [...subGroupIds];
-    if (!ids.length) return [];
-
-    return this.prisma.contact.findMany({
-      where: { subGroupId: { in: ids } },
-      select: { id: true, email: true, firstName: true, lastName: true },
-    });
+    throw new BadRequestException(
+      "sendCampaignFromTemplate legacy disabled: use EmailService.sendMarketingCampaign() with temp list pool.",
+    );
   }
 
   async listMarketingCampaigns(input?: {

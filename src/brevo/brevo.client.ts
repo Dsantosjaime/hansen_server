@@ -44,10 +44,15 @@ export interface BrevoClient {
 
   // Lists
   createList(name: string): Promise<{ id: number }>;
-  deleteList(listId: number): Promise<void>; // <-- AJOUT
+  deleteList(listId: number): Promise<void>;
   removeEmailsFromList(listId: number, emails: string[]): Promise<void>;
 
   // Contacts
+  upsertContact(args: {
+    email: string;
+    attributes?: Record<string, unknown>;
+  }): Promise<void>;
+
   upsertContactToList(args: {
     email: string;
     listId: number;
