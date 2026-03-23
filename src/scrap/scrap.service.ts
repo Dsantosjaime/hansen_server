@@ -11,7 +11,7 @@ function normalizePart(s: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // accents
-    .replace(/[^a-z0-9]+/g, ""); // garde alphanum (ici sans points)
+    .replace(/[^a-z0-9]+/g, ""); // garde alphanum (sans points)
 }
 
 function takeN(s: string, n?: number): string {
@@ -21,25 +21,47 @@ function takeN(s: string, n?: number): string {
 }
 
 function cleanupLocalPart(local: string): string {
-  // évite "..", "--", "__", ".-", etc + trim séparateurs
   return local
     .replace(/[._-]{2,}/g, (m) => m[0]) // "..." -> "."
     .replace(/^[._-]+/, "")
     .replace(/[._-]+$/, "");
 }
 
+function parseProspectNameParts(names: string[]): {
+  firstName: string;
+  lastName: string;
+  tokens: string[];
+  toVerify: boolean;
+} {
+  const tokens = (names ?? [])
+    .flatMap((x) =>
+      String(x ?? "")
+        .trim()
+        .split(/\s+/),
+    )
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  if (tokens.length === 0) {
+    return { firstName: "", lastName: "", tokens: [], toVerify: false };
+  }
+
+  const firstName = tokens[0];
+  const lastName = tokens.slice(1).join(" "); // "dos santos"
+  const toVerify = tokens.length > 2;
+
+  return { firstName, lastName, tokens, toVerify };
+}
+
 export function buildEmailFromTemplate(params: {
-  names: string[];
+  firstName: string;
+  lastName: string; // peut contenir des espaces ("dos santos")
   domain: string;
   extension: string;
   pattern: string; // ex "{first:1}.{last}"
 }): string {
-  const firstRaw = params.names?.[0] ?? "";
-  const lastRaw = params.names?.[1] ?? "";
-
   const domain = params.domain;
   const ext = params.extension;
-
   if (!domain || !ext) return "";
 
   const tokenRe = /\{(first|last)(?::(\d+))?\}/g;
@@ -48,9 +70,8 @@ export function buildEmailFromTemplate(params: {
     tokenRe,
     (_m, key: "first" | "last", nStr?: string) => {
       const n = nStr ? Number(nStr) : undefined;
-
-      const value =
-        key === "first" ? normalizePart(firstRaw) : normalizePart(lastRaw);
+      const raw = key === "first" ? params.firstName : params.lastName;
+      const value = normalizePart(raw); // "dos santos" -> "dossantos"
       return takeN(value, n);
     },
   );
@@ -79,15 +100,15 @@ export class ScrapService {
       selection.subGroupId,
     );
 
-    const listId = await this.brevo.ensureBrevoListForSubGroup(
-      selection.subGroupId,
-    );
-
-    // 1) Prépare les candidats (email + infos), ignore emails invalides
+    // 1) Prépare les candidats (email + infos)
     const candidates = prospects
       .map((p) => {
+        const parsed = parseProspectNameParts(p.names ?? []);
+        if (!parsed.firstName) return null;
+
         const email = buildEmailFromTemplate({
-          names: p.names,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
           domain: selection.domain,
           extension: selection.extension,
           pattern: selection.pattern,
@@ -97,11 +118,15 @@ export class ScrapService {
 
         if (!email) return null;
 
-        const firstName = (p.names?.[0] ?? "").trim();
-        const lastName = (p.names?.[1] ?? "").trim();
         const fn = (p.function ?? "").trim();
 
-        return { email, firstName, lastName, fn };
+        return {
+          email,
+          firstName: parsed.firstName.trim(),
+          lastName: (parsed.lastName || "").trim(),
+          fn,
+          toVerify: parsed.toVerify,
+        };
       })
       .filter(
         (
@@ -111,6 +136,7 @@ export class ScrapService {
           firstName: string;
           lastName: string;
           fn: string;
+          toVerify: boolean;
         } => !!x,
       );
 
@@ -131,27 +157,32 @@ export class ScrapService {
       if (seenInBatch.has(c.email)) continue;
       seenInBatch.add(c.email);
 
-      // 1) Upsert Brevo dans la liste (provider)
-      await this.brevo.upsertContactToList({
+      // A) Upsert Brevo CONTACT (sans list)
+      await this.brevo.upsertContact({
         email: c.email,
-        listId,
         attributes: {
           FIRSTNAME: c.firstName,
           LASTNAME: c.lastName,
           FUNCTION: c.fn,
           STATUS: "ACTIF",
+
+          // utile pour retrouver l'origine côté Brevo, sans créer de list
+          SUBGROUP_ID: selection.subGroupId,
+          GROUP_ID: selection.groupId,
         },
       });
 
-      // 2) Upsert BDD (mais maintenant uniquement pour les nouveaux emails)
+      // B) Upsert BDD (nouveaux emails uniquement)
       await this.contacts.upsertFromScrap({
         groupId: selection.groupId,
         subGroupId: selection.subGroupId,
         email: c.email,
         firstName: c.firstName,
-        lastName: c.lastName,
+        lastName: c.lastName || "UNKNOWN",
         function: c.fn,
-        status: ContactStatus.NO_EXCHANGE,
+        status: c.toVerify
+          ? ContactStatus.TO_VERIFY
+          : ContactStatus.NO_EXCHANGE,
       });
 
       processed++;

@@ -13,7 +13,8 @@ export const ContactStatus = {
   NO_EXCHANGE: 'NO_EXCHANGE',
   MET: 'MET',
   CLIENT: 'CLIENT',
-  UNDESIRABLE: 'UNDESIRABLE'
+  UNDESIRABLE: 'UNDESIRABLE',
+  TO_VERIFY: 'TO_VERIFY'
 } as const
 
 export type ContactStatus = (typeof ContactStatus)[keyof typeof ContactStatus]

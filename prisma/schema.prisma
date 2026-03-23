@@ -75,6 +75,7 @@ enum ContactStatus {
   MET
   CLIENT
   UNDESIRABLE
+  TO_VERIFY
 }
 
 model Contact {

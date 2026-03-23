@@ -3,4 +3,5 @@ export enum ContactStatus {
   MET = "MET",
   CLIENT = "CLIENT",
   UNDESIRABLE = "UNDESIRABLE",
+  TO_VERIFY = "TO_VERIFY",
 }
