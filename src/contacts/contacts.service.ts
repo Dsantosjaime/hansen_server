@@ -12,6 +12,7 @@ import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { SubGroupsService } from "@/subgroups/subgroups.service";
 import { Prisma } from "generated/prisma/client";
 import { ContactStatus } from "./type/contact-status.enum";
+import { BulkDeleteContactsDto } from "./dto/bulk-delete-contacts.dto";
 
 @Injectable()
 export class ContactsService {
@@ -54,6 +55,14 @@ export class ContactsService {
       email: c.email,
       attributes: this.toBrevoAttributes(c),
     });
+  }
+
+  private deleteBrevoContactsBestEffort(emails: string[]) {
+    for (const email of emails) {
+      this.brevo.deleteBrevoContactByEmail(email).catch((e) => {
+        this.logger.warn(`Brevo delete contact failed for ${email}: ${e}`);
+      });
+    }
   }
 
   async create(dto: CreateContactDto) {
@@ -177,11 +186,49 @@ export class ContactsService {
     const deleted = await this.prisma.contact.delete({ where: { id } });
 
     // Plus de remove-from-list (car plus de list subgroup)
-    this.brevo
-      .deleteBrevoContactByEmail(existing.email)
-      .catch((e) => this.logger.warn(`Brevo delete contact failed: ${e}`));
+    this.deleteBrevoContactsBestEffort([existing.email]);
 
     return deleted;
+  }
+
+  /**
+   * ✅ NEW: suppression massive (DB + best-effort Brevo)
+   */
+  async bulkRemove(dto: BulkDeleteContactsDto) {
+    const ids = [...new Set((dto.ids ?? []).filter(Boolean))];
+
+    if (!ids.length) {
+      return {
+        requestedCount: 0,
+        foundCount: 0,
+        deletedCount: 0,
+        notFoundIds: [],
+      };
+    }
+
+    // 1) récupère emails avant suppression
+    const found = await this.prisma.contact.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, email: true },
+    });
+
+    const foundIds = new Set(found.map((c) => c.id));
+    const notFoundIds = ids.filter((id) => !foundIds.has(id));
+
+    // 2) suppression DB
+    const res = await this.prisma.contact.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    // 3) suppression Brevo best-effort
+    this.deleteBrevoContactsBestEffort(found.map((c) => c.email));
+
+    return {
+      requestedCount: ids.length,
+      foundCount: found.length,
+      deletedCount: res.count,
+      notFoundIds,
+    };
   }
 
   async upsertFromScrap(input: {
