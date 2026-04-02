@@ -1476,6 +1476,8 @@ export const EmailSendScalarFieldEnum = {
   name: 'name',
   subject: 'subject',
   status: 'status',
+  source: 'source',
+  note: 'note',
   affectedGroupIds: 'affectedGroupIds',
   affectedSubGroupIds: 'affectedSubGroupIds',
   recipientsCount: 'recipientsCount',
@@ -1651,6 +1653,20 @@ export type EnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'ContactStatus[]'
  */
 export type ListEnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EmailSendSource'
+ */
+export type EnumEmailSendSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmailSendSource'>
+    
+
+
+/**
+ * Reference to a field of type 'EmailSendSource[]'
+ */
+export type ListEnumEmailSendSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmailSendSource[]'>
     
 
 

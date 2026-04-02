@@ -20,6 +20,14 @@ export const ContactStatus = {
 export type ContactStatus = (typeof ContactStatus)[keyof typeof ContactStatus]
 
 
+export const EmailSendSource = {
+  BREVO: 'BREVO',
+  MANUAL: 'MANUAL'
+} as const
+
+export type EmailSendSource = (typeof EmailSendSource)[keyof typeof EmailSendSource]
+
+
 export const ToDoType = {
   REMINDER: 'REMINDER',
   SERVICE: 'SERVICE'

@@ -108,24 +108,32 @@ type EmailSendGroup {
   subGroups EmailSendSubGroup[]
 }
 
+enum EmailSendSource {
+  BREVO
+  MANUAL
+}
+
 model EmailSend {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
 
-  brevoCampaignId String   @unique
+  brevoCampaignId String?  @unique
+
   templateId      Int
 
   name            String?
   subject         String
   status          String
 
-  affected        EmailSendGroup[]
+  source          EmailSendSource @default(BREVO)
+
+  note            String?
+
+  affected            EmailSendGroup[]
   affectedGroupIds    String[] @db.ObjectId
   affectedSubGroupIds String[] @db.ObjectId
 
   recipientsCount Int?
 
-  // On garde listIds/tempListId pour compatibilité,
-  // mais listIds sera désormais [] (plus de lists par subgroup).
   listIds    Int[]
   tempListId Int?
 
@@ -144,6 +152,7 @@ model EmailSend {
   @@index([createdAt])
   @@index([status])
   @@index([templateId])
+  @@index([source])
 }
 
 model TemplateSubGroupCursor {

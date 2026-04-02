@@ -177,6 +177,13 @@ export type IntFilter<$PrismaModel = never> = {
   not?: Prisma.NestedIntFilter<$PrismaModel> | number
 }
 
+export type EnumEmailSendSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailSendSource | Prisma.EnumEmailSendSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel> | $Enums.EmailSendSource
+}
+
 export type DateTimeNullableFilter<$PrismaModel = never> = {
   equals?: Date | string | Prisma.DateTimeFieldRefInput<$PrismaModel> | null
   in?: Date[] | string[] | Prisma.ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -203,6 +210,16 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedIntFilter<$PrismaModel>
   _max?: Prisma.NestedIntFilter<$PrismaModel>
+}
+
+export type EnumEmailSendSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailSendSource | Prisma.EnumEmailSendSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEmailSendSourceWithAggregatesFilter<$PrismaModel> | $Enums.EmailSendSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel>
 }
 
 export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -425,6 +442,13 @@ export type NestedEnumContactStatusWithAggregatesFilter<$PrismaModel = never> = 
   _max?: Prisma.NestedEnumContactStatusFilter<$PrismaModel>
 }
 
+export type NestedEnumEmailSendSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailSendSource | Prisma.EnumEmailSendSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel> | $Enums.EmailSendSource
+}
+
 export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
   equals?: Date | string | Prisma.DateTimeFieldRefInput<$PrismaModel> | null
   in?: Date[] | string[] | Prisma.ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -462,6 +486,16 @@ export type NestedFloatFilter<$PrismaModel = never> = {
   gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
+export type NestedEnumEmailSendSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EmailSendSource | Prisma.EnumEmailSendSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EmailSendSource[] | Prisma.ListEnumEmailSendSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEmailSendSourceWithAggregatesFilter<$PrismaModel> | $Enums.EmailSendSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEmailSendSourceFilter<$PrismaModel>
 }
 
 export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {

@@ -21,6 +21,7 @@ import { CheckAbilities } from "src/casl/check-abilities.decorator";
 import { EmailService } from "./email.service";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { ScheduleSendCampaignDto } from "@/brevo/dto/schedule-send-campaign.dto";
+import { MarkTemplateAsSentDto } from "./dto/mark-template-as-sent.dto";
 
 @ApiTags("emails")
 @Controller("emails")
@@ -72,6 +73,21 @@ export class EmailController {
   @CheckAbilities({ action: "create", subject: "Email" })
   sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
     return this.emailService.sendMarketingCampaign(dto);
+  }
+
+  /**
+   * ✅ NEW: même blocage que sendMarketingCampaign, mais sans envoyer d'email.
+   */
+  @Post("marketing/campaigns/mark-sent")
+  @ApiBearerAuth("jwt")
+  @UseGuards(JwtAuthGuard, CaslGuard)
+  @ApiOperation({
+    summary:
+      "Marquer un template comme déjà envoyé pour une sélection (groupIds/subGroupIds) - met à jour les cursors + crée un EmailSend MANUAL",
+  })
+  @CheckAbilities({ action: "create", subject: "Email" })
+  markSent(@Body() dto: MarkTemplateAsSentDto) {
+    return this.emailService.markMarketingTemplateAsSent(dto);
   }
 
   @Get("marketing/campaigns")

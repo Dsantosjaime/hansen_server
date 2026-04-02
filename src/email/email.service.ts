@@ -9,6 +9,8 @@ import { Prisma } from "generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { ScheduleSendCampaignDto } from "@/brevo/dto/schedule-send-campaign.dto";
+import { MarkTemplateAsSentDto } from "./dto/mark-template-as-sent.dto";
+import { randomUUID } from "crypto";
 
 type BrevoWebhookEvent = {
   email?: string;
@@ -133,26 +135,17 @@ export class EmailService {
     return { affected, affectedGroupIds, affectedSubGroupIds };
   }
 
-  async sendMarketingCampaign(dto: ScheduleSendCampaignDto) {
-    if (dto.scheduledAt) {
-      throw new BadRequestException("Scheduled is not supported yet.");
-    }
-
-    // 1) subGroupIds ciblés
-    const targetSubGroupIds = await this.resolveTargetSubGroupIds(dto);
-    if (!targetSubGroupIds.length) {
-      throw new NotFoundException("Empty selection (no subGroups resolved).");
-    }
-
-    // 2) Template (subject)
-    const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
-    const subject = tpl.subject ?? "(no subject)";
-
-    // 3) Cursors existants
+  /**
+   * ✅ Factorisation: récupère cursors existants + map "from"
+   */
+  private async getFromBySubGroupId(args: {
+    templateId: number;
+    subGroupIds: string[];
+  }) {
     const cursors = await this.prisma.templateSubGroupCursor.findMany({
       where: {
-        templateId: dto.templateId,
-        subGroupId: { in: targetSubGroupIds },
+        templateId: args.templateId,
+        subGroupId: { in: args.subGroupIds },
       },
       select: { subGroupId: true, lastSentAt: true },
     });
@@ -162,11 +155,171 @@ export class EmailService {
       lastSentAtBySubGroupId.set(c.subGroupId, c.lastSentAt);
 
     const fromBySubGroupId = new Map<string, Date | null>();
-    for (const sgId of targetSubGroupIds) {
+    for (const sgId of args.subGroupIds) {
       fromBySubGroupId.set(sgId, lastSentAtBySubGroupId.get(sgId) ?? null);
     }
 
-    // 4) Eligible "new-only"
+    return { fromBySubGroupId, lastSentAtBySubGroupId };
+  }
+
+  /**
+   * ✅ Factorisation: mise à jour des cursors (blocage new-only)
+   */
+  private async upsertTemplateSubGroupCursors(args: {
+    templateId: number;
+    subGroupIds: string[];
+    lastSentAt: Date;
+  }) {
+    const ops = args.subGroupIds.map((subGroupId) =>
+      this.prisma.templateSubGroupCursor.upsert({
+        where: {
+          templateId_subGroupId: {
+            templateId: args.templateId,
+            subGroupId,
+          },
+        },
+        create: {
+          templateId: args.templateId,
+          subGroupId,
+          lastSentAt: args.lastSentAt,
+        },
+        update: { lastSentAt: args.lastSentAt },
+      }),
+    );
+
+    await this.prisma.$transaction(ops);
+    return { updatedCount: args.subGroupIds.length };
+  }
+
+  /**
+   * ✅ IMPORTANT: Mongo unique index n'autorise pas plusieurs docs sans brevoCampaignId.
+   * Donc pour les campagnes MANUAL, on génère un "fake" brevoCampaignId unique.
+   */
+  private makeManualCampaignId(templateId: number) {
+    return `MANUAL:T${templateId}:${randomUUID()}`;
+  }
+
+  /**
+   * ✅ NEW: marquer comme déjà envoyé (MANUAL) + créer EmailSend "manuel"
+   */
+  async markMarketingTemplateAsSent(dto: MarkTemplateAsSentDto) {
+    // Vérifie que le template existe + récupère subject (affichage)
+    const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
+    const subject = tpl.subject ?? "(no subject)";
+
+    const resolved = await this.resolveTargetSubGroupIds(dto);
+    if (!resolved.length) {
+      throw new NotFoundException("Empty selection (no subGroups resolved).");
+    }
+
+    // Valide existence subgroups
+    const existing = await this.prisma.subGroup.findMany({
+      where: { id: { in: resolved } },
+      select: { id: true },
+    });
+    const subGroupIds = existing.map((x) => x.id);
+    if (!subGroupIds.length) {
+      throw new NotFoundException("No valid subGroups found for selection.");
+    }
+
+    const existingSet = new Set(subGroupIds);
+    const notFoundSubGroupIds = resolved.filter((id) => !existingSet.has(id));
+
+    // "from" basé sur les cursors existants
+    const { fromBySubGroupId, lastSentAtBySubGroupId } =
+      await this.getFromBySubGroupId({
+        templateId: dto.templateId,
+        subGroupIds,
+      });
+
+    // recipientsCount = nb de "nouveaux" qui auraient été ciblés
+    const counts = await Promise.all(
+      subGroupIds.map(async (sgId) => {
+        const last = lastSentAtBySubGroupId.get(sgId);
+        const count = await this.prisma.contact.count({
+          where: {
+            subGroupId: sgId,
+            ...(last ? { createdAt: { gt: last } } : {}),
+          },
+        });
+        return [sgId, count] as const;
+      }),
+    );
+
+    const countBySubGroupId = new Map<string, number>(counts);
+    const recipientsCountTotal = counts.reduce((acc, [, c]) => acc + c, 0);
+
+    const targeting = await this.buildAffected({
+      subGroupIds,
+      fromBySubGroupId,
+      countBySubGroupId,
+    });
+
+    const now = new Date();
+
+    // 1) Crée un EmailSend MANUAL pour audit
+    const emailSend = await this.prisma.emailSend.create({
+      data: {
+        // ✅ clé : toujours un unique "id campagne", même pour MANUAL
+        brevoCampaignId: this.makeManualCampaignId(dto.templateId),
+
+        templateId: dto.templateId,
+        name: `Envoi manuel - Template ${dto.templateId}`,
+        subject,
+        status: "manual",
+        source: "MANUAL",
+        note: "Email envoyé via un autre outil (marquage manuel).",
+
+        affected: targeting.affected,
+        affectedGroupIds: targeting.affectedGroupIds,
+        affectedSubGroupIds: targeting.affectedSubGroupIds,
+        recipientsCount: recipientsCountTotal,
+
+        listIds: [],
+        tempListId: null,
+        scheduledAt: null,
+      },
+    });
+
+    // 2) Update cursors (blocage "new-only")
+    const { updatedCount } = await this.upsertTemplateSubGroupCursors({
+      templateId: dto.templateId,
+      subGroupIds,
+      lastSentAt: now,
+    });
+
+    return {
+      ok: true,
+      emailSendId: emailSend.id,
+      templateId: dto.templateId,
+      subject,
+      lastSentAt: now,
+      updatedCount,
+      recipientsCount: recipientsCountTotal,
+      subGroupIds,
+      notFoundSubGroupIds,
+    };
+  }
+
+  async sendMarketingCampaign(dto: ScheduleSendCampaignDto) {
+    if (dto.scheduledAt) {
+      throw new BadRequestException("Scheduled is not supported yet.");
+    }
+
+    const targetSubGroupIds = await this.resolveTargetSubGroupIds(dto);
+    if (!targetSubGroupIds.length) {
+      throw new NotFoundException("Empty selection (no subGroups resolved).");
+    }
+
+    const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
+    const subject = tpl.subject ?? "(no subject)";
+
+    const { fromBySubGroupId, lastSentAtBySubGroupId } =
+      await this.getFromBySubGroupId({
+        templateId: dto.templateId,
+        subGroupIds: targetSubGroupIds,
+      });
+
     const or: Prisma.ContactWhereInput[] = targetSubGroupIds.map((sgId) => {
       const last = lastSentAtBySubGroupId.get(sgId);
       return {
@@ -192,7 +345,6 @@ export class EmailService {
       );
     }
 
-    // 5) Comptage par subgroup
     const countBySubGroupId = new Map<string, number>();
     for (const c of eligibleContacts) {
       countBySubGroupId.set(
@@ -201,20 +353,17 @@ export class EmailService {
       );
     }
 
-    // 6) Acquire temp list (pool <= 30)
     const now = new Date();
     const tmpLabel = `TMP:T${dto.templateId}:${now.toISOString()}`;
 
     const { listId: tempListId, tempListDbId } =
       await this.brevoMarketing.acquireTemporaryList({ label: tmpLabel });
 
-    // 7) Upsert des contacts éligibles dans la liste temp
     await this.brevoMarketing.bulkUpsertContactsToList(
       tempListId,
       eligibleContacts.map((c) => ({ email: c.email, attributes: {} })),
     );
 
-    // 8) Envoi campagne vers la liste temp
     const attachmentUrl =
       dto.attachmentUrl && dto.attachmentUrl.trim().length > 0
         ? dto.attachmentUrl.trim()
@@ -234,7 +383,6 @@ export class EmailService {
       brevoCampaignId: String(campaignId),
     });
 
-    // 9) Enregistre EmailSend (run)
     const targeting = await this.buildAffected({
       subGroupIds: targetSubGroupIds,
       fromBySubGroupId,
@@ -248,36 +396,24 @@ export class EmailService {
         name: dto.name ?? null,
         subject,
         status: "queued",
+        source: "BREVO",
+
         affected: targeting.affected,
         affectedGroupIds: targeting.affectedGroupIds,
         affectedSubGroupIds: targeting.affectedSubGroupIds,
         recipientsCount: eligibleContacts.length,
 
-        // plus de lists logiques par subgroup
         listIds: [],
         tempListId,
-
         scheduledAt: null,
       },
     });
 
-    // 10) Update cursors (lastSentAt = now)
-    for (const sgId of targetSubGroupIds) {
-      await this.prisma.templateSubGroupCursor.upsert({
-        where: {
-          templateId_subGroupId: {
-            templateId: dto.templateId,
-            subGroupId: sgId,
-          },
-        },
-        create: {
-          templateId: dto.templateId,
-          subGroupId: sgId,
-          lastSentAt: now,
-        },
-        update: { lastSentAt: now },
-      });
-    }
+    await this.upsertTemplateSubGroupCursors({
+      templateId: dto.templateId,
+      subGroupIds: targetSubGroupIds,
+      lastSentAt: now,
+    });
 
     return {
       campaignId,
@@ -389,6 +525,7 @@ export class EmailService {
           templateId: 0,
           subject: "(unknown)",
           status: eventType,
+          source: "BREVO",
           affected: [],
           affectedGroupIds: [],
           affectedSubGroupIds: [],

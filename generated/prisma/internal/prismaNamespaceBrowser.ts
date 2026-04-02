@@ -145,6 +145,8 @@ export const EmailSendScalarFieldEnum = {
   name: 'name',
   subject: 'subject',
   status: 'status',
+  source: 'source',
+  note: 'note',
   affectedGroupIds: 'affectedGroupIds',
   affectedSubGroupIds: 'affectedSubGroupIds',
   recipientsCount: 'recipientsCount',
