@@ -3,9 +3,11 @@ import {
   Controller,
   Get,
   HttpCode,
+  Logger,
   Param,
   Post,
   Query,
+  Req,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -15,6 +17,7 @@ import {
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
+import { Request } from "express";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { CaslGuard } from "src/casl/casl.guard";
 import { CheckAbilities } from "src/casl/check-abilities.decorator";
@@ -27,10 +30,28 @@ import { MarkTemplateAsSentDto } from "./dto/mark-template-as-sent.dto";
 @ApiTags("emails")
 @Controller("emails")
 export class EmailController {
+  private readonly logger = new Logger(EmailController.name);
+
   constructor(
     private readonly emailService: EmailService,
     private readonly brevoMarketing: BrevoMarketingService,
   ) {}
+
+  private stringifyForLog(value: unknown) {
+    try {
+      const s = JSON.stringify(value);
+      if (!s) return String(value);
+      return s.length > 4000 ? `${s.slice(0, 4000)}... [truncated]` : s;
+    } catch {
+      return "[unserializable]";
+    }
+  }
+
+  private maskToken(token?: string) {
+    if (!token) return "(missing)";
+    if (token.length <= 8) return "***";
+    return `${token.slice(0, 4)}***${token.slice(-2)}`;
+  }
 
   @Get("contacts/:contactId")
   @ApiBearerAuth("jwt")
@@ -51,8 +72,43 @@ export class EmailController {
     summary: "Webhook Brevo pour mise à jour du statut email des contacts",
   })
   @ApiQuery({ name: "token", required: true })
-  brevoWebhook(@Query("token") token: string, @Body() body: unknown) {
-    return this.emailService.handleBrevoWebhook(token, body);
+  async brevoWebhook(
+    @Query("token") token: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    this.logger.log(
+      `[BREVO WEBHOOK] incoming request method=${req.method} url=${req.originalUrl}`,
+    );
+
+    this.logger.log(
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      `[BREVO WEBHOOK] ip=${req.ip} x-forwarded-for=${req.headers["x-forwarded-for"] ?? "(none)"} user-agent=${req.headers["user-agent"] ?? "(none)"}`,
+    );
+
+    this.logger.log(
+      `[BREVO WEBHOOK] token=${this.maskToken(token)} content-type=${req.headers["content-type"] ?? "(none)"}`,
+    );
+
+    this.logger.log(`[BREVO WEBHOOK] body=${this.stringifyForLog(body)}`);
+
+    try {
+      const result = await this.emailService.handleBrevoWebhook(token, body);
+
+      this.logger.log(
+        `[BREVO WEBHOOK] success result=${this.stringifyForLog(result)}`,
+      );
+
+      return result;
+    } catch (error: any) {
+      this.logger.error(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        `[BREVO WEBHOOK] failed message=${error?.message ?? "unknown error"}`,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        error?.stack,
+      );
+      throw error;
+    }
   }
 
   @Get("marketing/templates")
