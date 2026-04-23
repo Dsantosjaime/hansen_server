@@ -567,7 +567,7 @@ export class EmailService {
     const expected = this.config.getOrThrow<string>("BREVO_WEBHOOK_TOKEN");
 
     if (!token || token !== expected) {
-      throw new UnauthorizedException("Invalid webhook token");
+      throw new UnauthorizedException("Invalid webhook token" + expected);
     }
 
     const events: BrevoWebhookEvent[] = Array.isArray(payload)
