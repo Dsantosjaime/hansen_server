@@ -9,12 +9,12 @@ import { SubmitLinkedinScrapeResponseDto } from "./dto/submit-linkedin-scrape.re
 
 @ApiTags("scrap")
 @ApiBearerAuth("jwt")
-@Controller("scrap")
+@Controller("recuperation")
 @UseGuards(JwtAuthGuard, CaslGuard)
 export class ScrapController {
   constructor(private readonly scrap: ScrapService) {}
 
-  @Post("linkedin")
+  @Post("source")
   @ApiOperation({
     summary:
       "Reçoit le résultat d’un scraping Linkedin, déduit les emails, upsert BDD et Brevo (liste du subGroup).",

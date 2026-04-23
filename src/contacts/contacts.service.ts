@@ -10,7 +10,7 @@ import { UpdateContactDto } from "./dto/update-contact.dto";
 import { PrismaClientKnownRequestError } from "generated/prisma/internal/prismaNamespace";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { SubGroupsService } from "@/subgroups/subgroups.service";
-import { Prisma } from "generated/prisma/client";
+import { ContactEmailStatus, Prisma } from "generated/prisma/client";
 import { ContactStatus } from "./type/contact-status.enum";
 import { BulkDeleteContactsDto } from "./dto/bulk-delete-contacts.dto";
 
@@ -23,6 +23,10 @@ export class ContactsService {
     private readonly brevo: BrevoMarketingService,
     private readonly subGroupsService: SubGroupsService,
   ) {}
+
+  private normalizeEmail(email: string) {
+    return email.trim().toLowerCase();
+  }
 
   public async assertGroupAndSubGroup(groupId: string, subGroupId: string) {
     return this.subGroupsService.assertGroupAndSubGroup(groupId, subGroupId);
@@ -50,7 +54,6 @@ export class ContactsService {
     });
     if (!c) return;
 
-    // Plus de list par subgroup -> on upsert juste le contact (sans listId).
     await this.brevo.upsertContact({
       email: c.email,
       attributes: this.toBrevoAttributes(c),
@@ -68,6 +71,8 @@ export class ContactsService {
   async create(dto: CreateContactDto) {
     await this.assertGroupAndSubGroup(dto.groupId, dto.subGroupId);
 
+    const normalizedEmail = this.normalizeEmail(dto.email);
+
     try {
       const created = await this.prisma.contact.create({
         data: {
@@ -75,7 +80,10 @@ export class ContactsService {
           lastName: dto.lastName,
           function: dto.function,
           status: dto.status ?? ContactStatus.NO_EXCHANGE,
-          email: dto.email,
+          emailStatus: ContactEmailStatus.PAS_D_ENVOI,
+          emailStatusReason: null,
+          emailStatusUpdatedAt: null,
+          email: normalizedEmail,
           phoneNumber: dto.phoneNumber,
           lastContact: dto.lastContact,
           lastEmail: dto.lastEmail,
@@ -133,6 +141,10 @@ export class ContactsService {
       await this.assertGroupAndSubGroup(nextGroupId, nextSubGroupId);
     }
 
+    const normalizedEmail =
+      dto.email !== undefined ? this.normalizeEmail(dto.email) : existing.email;
+    const emailChanged = normalizedEmail !== existing.email;
+
     try {
       const updated = await this.prisma.contact.update({
         where: { id },
@@ -141,7 +153,7 @@ export class ContactsService {
           ...(dto.lastName !== undefined ? { lastName: dto.lastName } : {}),
           ...(dto.function !== undefined ? { function: dto.function } : {}),
           ...(dto.status !== undefined ? { status: dto.status } : {}),
-          ...(dto.email !== undefined ? { email: dto.email } : {}),
+          ...(dto.email !== undefined ? { email: normalizedEmail } : {}),
           ...(dto.phoneNumber !== undefined
             ? { phoneNumber: dto.phoneNumber }
             : {}),
@@ -152,6 +164,13 @@ export class ContactsService {
           ...(dto.groupId !== undefined ? { groupId: dto.groupId } : {}),
           ...(dto.subGroupId !== undefined
             ? { subGroupId: dto.subGroupId }
+            : {}),
+          ...(emailChanged
+            ? {
+                emailStatus: ContactEmailStatus.PAS_D_ENVOI,
+                emailStatusReason: null,
+                emailStatusUpdatedAt: null,
+              }
             : {}),
         },
       });
@@ -185,7 +204,6 @@ export class ContactsService {
 
     const deleted = await this.prisma.contact.delete({ where: { id } });
 
-    // Plus de remove-from-list (car plus de list subgroup)
     this.deleteBrevoContactsBestEffort([existing.email]);
 
     return deleted;
@@ -206,7 +224,6 @@ export class ContactsService {
       };
     }
 
-    // 1) récupère emails avant suppression
     const found = await this.prisma.contact.findMany({
       where: { id: { in: ids } },
       select: { id: true, email: true },
@@ -215,12 +232,10 @@ export class ContactsService {
     const foundIds = new Set(found.map((c) => c.id));
     const notFoundIds = ids.filter((id) => !foundIds.has(id));
 
-    // 2) suppression DB
     const res = await this.prisma.contact.deleteMany({
       where: { id: { in: ids } },
     });
 
-    // 3) suppression Brevo best-effort
     this.deleteBrevoContactsBestEffort(found.map((c) => c.email));
 
     return {
@@ -242,14 +257,19 @@ export class ContactsService {
   }) {
     await this.assertGroupAndSubGroup(input.groupId, input.subGroupId);
 
+    const normalizedEmail = this.normalizeEmail(input.email);
+
     return this.prisma.contact.upsert({
-      where: { email: input.email },
+      where: { email: normalizedEmail },
       create: {
         firstName: input.firstName,
         lastName: input.lastName,
         function: input.function,
         status: input.status,
-        email: input.email,
+        emailStatus: ContactEmailStatus.PAS_D_ENVOI,
+        emailStatusReason: null,
+        emailStatusUpdatedAt: null,
+        email: normalizedEmail,
         phoneNumber: [],
         lastContact: "",
         lastEmail: "",
@@ -269,7 +289,7 @@ export class ContactsService {
 
   async findExistingEmails(emails: string[]): Promise<Set<string>> {
     const unique = [
-      ...new Set((emails ?? []).map((e) => e.trim().toLowerCase())),
+      ...new Set((emails ?? []).map((e) => this.normalizeEmail(e))),
     ].filter(Boolean);
 
     if (!unique.length) return new Set();
@@ -279,7 +299,7 @@ export class ContactsService {
       select: { email: true },
     });
 
-    return new Set(rows.map((r) => r.email.trim().toLowerCase()));
+    return new Set(rows.map((r) => this.normalizeEmail(r.email)));
   }
 
   async findByGroupSubGroupPairs(

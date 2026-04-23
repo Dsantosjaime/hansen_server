@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Prisma } from "generated/prisma/client";
+import { Prisma, ContactEmailStatus } from "generated/prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { ScheduleSendCampaignDto } from "@/brevo/dto/schedule-send-campaign.dto";
@@ -14,31 +14,55 @@ import { randomUUID } from "crypto";
 
 type BrevoWebhookEvent = {
   email?: string;
-  event?: string;
-  date?: string | number;
-  campaignId?: number | string;
 
+  event?: string;
   type?: string;
+
+  date?: string | number;
   eventDate?: string | number;
   timestamp?: string | number;
+
+  date_event?: string | number;
+  ts_event?: string | number;
+  ts?: string | number;
+  ts_sent?: string | number;
+
+  campaignId?: number | string;
   emailCampaignId?: number | string;
+  camp_id?: number | string;
+
+  reason?: string;
+  message?: string;
+  description?: string;
+  details?: string;
+  smtpReply?: string;
+
+  tag?: string;
 };
 
 function toDate(v: unknown): Date | undefined {
   if (typeof v === "string") {
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? undefined : d;
+    const value = v.trim();
+    if (!value) return undefined;
+
+    let d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return d;
+
+    // Support de formats du type: "2020-10-09 00:00:00"
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+      d = new Date(value.replace(" ", "T") + "Z");
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+
+    return undefined;
   }
+
   if (typeof v === "number") {
     const d = new Date(v * 1000);
     return Number.isNaN(d.getTime()) ? undefined : d;
   }
-  return undefined;
-}
 
-function toInt(v: unknown): number | null {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+  return undefined;
 }
 
 @Injectable()
@@ -48,6 +72,53 @@ export class EmailService {
     private readonly config: ConfigService,
     private readonly brevoMarketing: BrevoMarketingService,
   ) {}
+
+  private normalizeBrevoEventType(v: unknown): string {
+    if (typeof v !== "string") return "";
+
+    return v
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+  }
+
+  private extractBrevoReason(evt: BrevoWebhookEvent): string | undefined {
+    const candidates = [
+      evt.reason,
+      evt.message,
+      evt.description,
+      evt.details,
+      evt.smtpReply,
+    ];
+
+    const found = candidates.find(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    );
+
+    return found?.trim();
+  }
+
+  private isTrackedBrevoEmailEvent(eventType: string): boolean {
+    return [
+      "spam",
+      "hardbounce",
+      "softbounced",
+      "unsubscribe",
+      "delivered",
+    ].includes(eventType);
+  }
+
+  private mapBrevoEventToContactEmailStatus(
+    eventType: string,
+  ): ContactEmailStatus | null {
+    if (eventType === "delivered") return ContactEmailStatus.DELIVRABLE;
+    if (eventType === "softbounced") return ContactEmailStatus.SOFT_BOUNCE;
+    if (eventType === "hardbounce") return ContactEmailStatus.HARD_BOUNCE;
+    if (eventType === "unsubscribe") return ContactEmailStatus.UNSUBSCRIBED;
+    if (eventType === "spam") return ContactEmailStatus.SPAM;
+
+    return null;
+  }
 
   private async resolveTargetSubGroupIds(dto: {
     groupIds?: string[];
@@ -151,8 +222,9 @@ export class EmailService {
     });
 
     const lastSentAtBySubGroupId = new Map<string, Date>();
-    for (const c of cursors)
+    for (const c of cursors) {
       lastSentAtBySubGroupId.set(c.subGroupId, c.lastSentAt);
+    }
 
     const fromBySubGroupId = new Map<string, Date | null>();
     for (const sgId of args.subGroupIds) {
@@ -203,7 +275,6 @@ export class EmailService {
    * ✅ NEW: marquer comme déjà envoyé (MANUAL) + créer EmailSend "manuel"
    */
   async markMarketingTemplateAsSent(dto: MarkTemplateAsSentDto) {
-    // Vérifie que le template existe + récupère subject (affichage)
     const tpl = await this.brevoMarketing.getTemplate(dto.templateId);
     const subject = tpl.subject ?? "(no subject)";
 
@@ -212,11 +283,11 @@ export class EmailService {
       throw new NotFoundException("Empty selection (no subGroups resolved).");
     }
 
-    // Valide existence subgroups
     const existing = await this.prisma.subGroup.findMany({
       where: { id: { in: resolved } },
       select: { id: true },
     });
+
     const subGroupIds = existing.map((x) => x.id);
     if (!subGroupIds.length) {
       throw new NotFoundException("No valid subGroups found for selection.");
@@ -225,14 +296,12 @@ export class EmailService {
     const existingSet = new Set(subGroupIds);
     const notFoundSubGroupIds = resolved.filter((id) => !existingSet.has(id));
 
-    // "from" basé sur les cursors existants
     const { fromBySubGroupId, lastSentAtBySubGroupId } =
       await this.getFromBySubGroupId({
         templateId: dto.templateId,
         subGroupIds,
       });
 
-    // recipientsCount = nb de "nouveaux" qui auraient été ciblés
     const counts = await Promise.all(
       subGroupIds.map(async (sgId) => {
         const last = lastSentAtBySubGroupId.get(sgId);
@@ -257,12 +326,9 @@ export class EmailService {
 
     const now = new Date();
 
-    // 1) Crée un EmailSend MANUAL pour audit
     const emailSend = await this.prisma.emailSend.create({
       data: {
-        // ✅ clé : toujours un unique "id campagne", même pour MANUAL
         brevoCampaignId: this.makeManualCampaignId(dto.templateId),
-
         templateId: dto.templateId,
         name: `Envoi manuel - Template ${dto.templateId}`,
         subject,
@@ -281,7 +347,6 @@ export class EmailService {
       },
     });
 
-    // 2) Update cursors (blocage "new-only")
     const { updatedCount } = await this.upsertTemplateSubGroupCursors({
       templateId: dto.templateId,
       subGroupIds,
@@ -336,6 +401,7 @@ export class EmailService {
         subGroupId: true,
         groupId: true,
         createdAt: true,
+        emailStatus: true,
       },
     });
 
@@ -409,6 +475,20 @@ export class EmailService {
       },
     });
 
+    // ✅ Les contacts ciblés passent à TENTATIVE_ENVOI,
+    // sauf ceux déjà validés comme DELIVRABLE.
+    await this.prisma.contact.updateMany({
+      where: {
+        id: { in: eligibleContacts.map((c) => c.id) },
+        emailStatus: { not: ContactEmailStatus.DELIVRABLE },
+      },
+      data: {
+        emailStatus: ContactEmailStatus.TENTATIVE_ENVOI,
+        emailStatusReason: null,
+        emailStatusUpdatedAt: now,
+      },
+    });
+
     await this.upsertTemplateSubGroupCursors({
       templateId: dto.templateId,
       subGroupIds: targetSubGroupIds,
@@ -429,7 +509,9 @@ export class EmailService {
       select: { id: true, subGroupId: true, createdAt: true },
     });
 
-    if (!contact) throw new NotFoundException(`Contact ${contactId} not found`);
+    if (!contact) {
+      throw new NotFoundException(`Contact ${contactId} not found`);
+    }
 
     const candidates = await this.prisma.emailSend.findMany({
       where: {
@@ -475,68 +557,124 @@ export class EmailService {
 
   async getEmailInfo(id: string) {
     const emailSend = await this.prisma.emailSend.findUnique({ where: { id } });
-    if (!emailSend) throw new NotFoundException(`EmailSend ${id} not found`);
+    if (!emailSend) {
+      throw new NotFoundException(`EmailSend ${id} not found`);
+    }
     return emailSend;
   }
 
   async handleBrevoWebhook(token: string | undefined, payload: unknown) {
     const expected = this.config.getOrThrow<string>("BREVO_WEBHOOK_TOKEN");
-    if (!token || token !== expected)
+
+    if (!token || token !== expected) {
       throw new UnauthorizedException("Invalid webhook token");
+    }
 
     const events: BrevoWebhookEvent[] = Array.isArray(payload)
       ? (payload as BrevoWebhookEvent[])
       : [payload as BrevoWebhookEvent];
 
     const results: Array<
-      | { ok: true; email: string; campaignId: number; eventType: string }
-      | { ok: false; reason: string; evt: BrevoWebhookEvent }
+      | {
+          ok: true;
+          updated: boolean;
+          ignored?: boolean;
+          matchedCount?: number;
+          email?: string;
+          eventType?: string;
+          status?: ContactEmailStatus;
+          reason?: string | null;
+        }
+      | {
+          ok: false;
+          reason: string;
+          evt: BrevoWebhookEvent;
+        }
     > = [];
 
     for (const evt of events) {
-      const email = evt.email ?? "(unknown)";
-      const eventType = (evt.event ?? evt.type ?? "").toString().toLowerCase();
-      const campaignId = toInt(evt.campaignId ?? evt.emailCampaignId);
+      const rawEmail = typeof evt.email === "string" ? evt.email.trim() : "";
+      const eventType = this.normalizeBrevoEventType(evt.event ?? evt.type);
+
       const eventAt =
-        toDate(evt.date) ??
+        toDate(evt.date_event) ??
+        toDate(evt.ts_event) ??
+        toDate(evt.ts) ??
         toDate(evt.eventDate) ??
+        toDate(evt.date) ??
         toDate(evt.timestamp) ??
+        toDate(evt.ts_sent) ??
         new Date();
 
-      if (!campaignId || !eventType) {
-        results.push({ ok: false, reason: "missing fields", evt });
+      if (!rawEmail || !eventType) {
+        results.push({
+          ok: false,
+          reason: "missing email or event",
+          evt,
+        });
         continue;
       }
 
-      const brevoCampaignId = String(campaignId);
+      if (!this.isTrackedBrevoEmailEvent(eventType)) {
+        results.push({
+          ok: true,
+          updated: false,
+          ignored: true,
+          email: rawEmail,
+          eventType,
+        });
+        continue;
+      }
 
-      const dataToUpdate: Record<string, unknown> = { status: eventType };
-      if (eventType === "sent") dataToUpdate.sentAt = eventAt;
-      if (eventType === "delivered") dataToUpdate.deliveredAt = eventAt;
-      if (eventType === "opened") dataToUpdate.openedAt = eventAt;
-      if (eventType === "clicked") dataToUpdate.clickedAt = eventAt;
-      if (eventType.includes("bounce")) dataToUpdate.bouncedAt = eventAt;
-      if (eventType.includes("unsub")) dataToUpdate.unsubscribedAt = eventAt;
+      const status = this.mapBrevoEventToContactEmailStatus(eventType);
+      if (!status) {
+        results.push({
+          ok: true,
+          updated: false,
+          ignored: true,
+          email: rawEmail,
+          eventType,
+        });
+        continue;
+      }
 
-      await this.prisma.emailSend.upsert({
-        where: { brevoCampaignId },
-        create: {
-          brevoCampaignId,
-          templateId: 0,
-          subject: "(unknown)",
-          status: eventType,
-          source: "BREVO",
-          affected: [],
-          affectedGroupIds: [],
-          affectedSubGroupIds: [],
-          listIds: [],
-          tempListId: null,
-          ...dataToUpdate,
+      const reason = this.extractBrevoReason(evt);
+      const normalizedEmail = rawEmail.toLowerCase();
+      const emailCandidates = [...new Set([rawEmail, normalizedEmail])];
+
+      const updateResult = await this.prisma.contact.updateMany({
+        where: {
+          AND: [
+            {
+              OR: emailCandidates.map((email) => ({ email })),
+            },
+            {
+              OR: [
+                { emailStatusUpdatedAt: null },
+                { emailStatusUpdatedAt: { lte: eventAt } },
+              ],
+            },
+          ],
         },
-        update: { ...dataToUpdate },
+        data: {
+          emailStatus: status,
+          emailStatusReason:
+            status === ContactEmailStatus.DELIVRABLE ? null : (reason ?? null),
+          emailStatusUpdatedAt: eventAt,
+        },
       });
 
-      results.push({ ok: true, email, campaignId, eventType });
+      results.push({
+        ok: true,
+        updated: updateResult.count > 0,
+        ignored: updateResult.count === 0,
+        matchedCount: updateResult.count,
+        email: rawEmail,
+        eventType,
+        status,
+        reason:
+          status === ContactEmailStatus.DELIVRABLE ? null : (reason ?? null),
+      });
     }
 
     return { ok: true, results };

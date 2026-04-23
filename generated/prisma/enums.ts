@@ -20,6 +20,19 @@ export const ContactStatus = {
 export type ContactStatus = (typeof ContactStatus)[keyof typeof ContactStatus]
 
 
+export const ContactEmailStatus = {
+  PAS_D_ENVOI: 'PAS_D_ENVOI',
+  TENTATIVE_ENVOI: 'TENTATIVE_ENVOI',
+  DELIVRABLE: 'DELIVRABLE',
+  SOFT_BOUNCE: 'SOFT_BOUNCE',
+  HARD_BOUNCE: 'HARD_BOUNCE',
+  UNSUBSCRIBED: 'UNSUBSCRIBED',
+  SPAM: 'SPAM'
+} as const
+
+export type ContactEmailStatus = (typeof ContactEmailStatus)[keyof typeof ContactEmailStatus]
+
+
 export const EmailSendSource = {
   BREVO: 'BREVO',
   MANUAL: 'MANUAL'

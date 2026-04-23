@@ -1456,6 +1456,9 @@ export const ContactScalarFieldEnum = {
   lastName: 'lastName',
   function: 'function',
   status: 'status',
+  emailStatus: 'emailStatus',
+  emailStatusReason: 'emailStatusReason',
+  emailStatusUpdatedAt: 'emailStatusUpdatedAt',
   email: 'email',
   phoneNumber: 'phoneNumber',
   lastContact: 'lastContact',
@@ -1653,6 +1656,20 @@ export type EnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'ContactStatus[]'
  */
 export type ListEnumContactStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ContactEmailStatus'
+ */
+export type EnumContactEmailStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactEmailStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ContactEmailStatus[]'
+ */
+export type ListEnumContactEmailStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactEmailStatus[]'>
     
 
 

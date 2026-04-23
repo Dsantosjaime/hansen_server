@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -45,7 +46,10 @@ export class EmailController {
   }
 
   @Post("brevo/webhook")
-  @ApiOperation({ summary: "Webhook Brevo pour mise à jour des statuts" })
+  @HttpCode(200)
+  @ApiOperation({
+    summary: "Webhook Brevo pour mise à jour du statut email des contacts",
+  })
   @ApiQuery({ name: "token", required: true })
   brevoWebhook(@Query("token") token: string, @Body() body: unknown) {
     return this.emailService.handleBrevoWebhook(token, body);
@@ -75,9 +79,6 @@ export class EmailController {
     return this.emailService.sendMarketingCampaign(dto);
   }
 
-  /**
-   * ✅ NEW: même blocage que sendMarketingCampaign, mais sans envoyer d'email.
-   */
   @Post("marketing/campaigns/mark-sent")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
