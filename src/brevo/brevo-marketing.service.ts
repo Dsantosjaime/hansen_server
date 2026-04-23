@@ -410,16 +410,18 @@ export class BrevoMarketingService {
       throw new NotFoundException("No target lists (empty listIds).");
     }
 
+    const currentSender = args.senderOverride ?? {
+      name: this.senderName,
+      email: this.senderEmail,
+    };
+
     const created = await this.brevo.createCampaignFromTemplate({
       name: args.name,
-      sender: args.senderOverride ?? {
-        name: this.senderName,
-        email: this.senderEmail,
-      },
+      sender: currentSender,
       listIds: args.listIds,
       templateId: args.templateId,
       subject: args.subject,
-      ...(args.replyToOverride ? { replyTo: args.replyToOverride } : {}),
+      replyTo: args.replyToOverride ?? currentSender.email,
       ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
     });
 
