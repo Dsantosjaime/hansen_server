@@ -2,12 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   Logger,
   Param,
   Post,
   Query,
-  Req,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -53,6 +53,13 @@ export class EmailController {
     return `${token.slice(0, 4)}***${token.slice(-2)}`;
   }
 
+  private extractBearerToken(authorization?: string): string | undefined {
+    if (!authorization) return undefined;
+
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    return match?.[1]?.trim() || undefined;
+  }
+
   @Get("contacts/:contactId")
   @ApiBearerAuth("jwt")
   @UseGuards(JwtAuthGuard, CaslGuard)
@@ -71,44 +78,29 @@ export class EmailController {
   @ApiOperation({
     summary: "Webhook Brevo pour mise à jour du statut email des contacts",
   })
-  @ApiQuery({ name: "token", required: true })
+  @ApiQuery({
+    name: "token",
+    required: false,
+    description: "Fallback legacy si le token est passé en query param",
+  })
   async brevoWebhook(
-    @Query("token") token: string,
+    @Query("token") queryToken: string | undefined,
+    @Headers("authorization") authorization: string | undefined,
     @Body() body: unknown,
-    @Req() req: Request,
   ) {
-    this.logger.log(
-      `[BREVO WEBHOOK] incoming request method=${req.method} url=${req.originalUrl}`,
+    const bearerToken = this.extractBearerToken(authorization);
+    const effectiveToken = bearerToken ?? queryToken;
+
+    const result = await this.emailService.handleBrevoWebhook(
+      effectiveToken,
+      body,
     );
 
     this.logger.log(
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `[BREVO WEBHOOK] ip=${req.ip} x-forwarded-for=${req.headers["x-forwarded-for"] ?? "(none)"} user-agent=${req.headers["user-agent"] ?? "(none)"}`,
+      `[BREVO WEBHOOK] success result=${this.stringifyForLog(result)}`,
     );
 
-    this.logger.log(
-      `[BREVO WEBHOOK] token=${this.maskToken(token)} content-type=${req.headers["content-type"] ?? "(none)"}`,
-    );
-
-    this.logger.log(`[BREVO WEBHOOK] body=${this.stringifyForLog(body)}`);
-
-    try {
-      const result = await this.emailService.handleBrevoWebhook(token, body);
-
-      this.logger.log(
-        `[BREVO WEBHOOK] success result=${this.stringifyForLog(result)}`,
-      );
-
-      return result;
-    } catch (error: any) {
-      this.logger.error(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        `[BREVO WEBHOOK] failed message=${error?.message ?? "unknown error"}`,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        error?.stack,
-      );
-      throw error;
-    }
+    return result;
   }
 
   @Get("marketing/templates")
