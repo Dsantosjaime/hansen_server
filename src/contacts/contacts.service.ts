@@ -16,6 +16,20 @@ import { BulkDeleteContactsDto } from "./dto/bulk-delete-contacts.dto";
 import { buildEmailFromTemplate } from "@/common/email/email-address.util";
 import { BulkUpdateContactEmailsDto } from "./dto/bulk-update-email-contacts.dto";
 
+type BulkEmailUpdateItem = {
+  id: string;
+  oldEmail: string;
+  newEmail: string;
+};
+
+type BulkEmailUpdateResultItem = {
+  id: string;
+  oldEmail: string;
+  newEmail: string;
+  updated: boolean;
+  reason?: string | null;
+};
+
 @Injectable()
 export class ContactsService {
   private readonly logger = new Logger(ContactsService.name);
@@ -69,6 +83,160 @@ export class ContactsService {
           }
         : {}),
     };
+  }
+
+  private buildMongoBulkEmailUpdateCommand(chunk: BulkEmailUpdateItem[]) {
+    return {
+      update: "Contact",
+      ordered: false,
+      updates: chunk.map((item) => ({
+        q: { _id: { $oid: item.id } },
+        u: {
+          $set: {
+            email: item.newEmail,
+            emailStatus: ContactEmailStatus.PAS_D_ENVOI,
+            emailStatusReason: null,
+            emailStatusUpdatedAt: null,
+          },
+        },
+        multi: false,
+        upsert: false,
+      })),
+    } as Prisma.InputJsonObject;
+  }
+
+  private async executeMongoBulkEmailUpdateChunk(
+    chunk: BulkEmailUpdateItem[],
+  ): Promise<BulkEmailUpdateResultItem[]> {
+    const results: BulkEmailUpdateResultItem[] = [];
+
+    try {
+      const command = this.buildMongoBulkEmailUpdateCommand(chunk);
+      const raw = (await this.prisma.$runCommandRaw(command)) as {
+        ok?: number;
+        writeErrors?: Array<{
+          index?: number;
+          code?: number;
+          errmsg?: string;
+        }>;
+      };
+
+      const writeErrors = Array.isArray(raw?.writeErrors)
+        ? raw.writeErrors
+        : [];
+      const errorByIndex = new Map<
+        number,
+        { code?: number; errmsg?: string }
+      >();
+
+      for (const err of writeErrors) {
+        if (typeof err?.index === "number") {
+          errorByIndex.set(err.index, {
+            code: err.code,
+            errmsg: err.errmsg,
+          });
+        }
+      }
+
+      for (let i = 0; i < chunk.length; i++) {
+        const item = chunk[i];
+        const writeError = errorByIndex.get(i);
+
+        if (!writeError) {
+          results.push({
+            id: item.id,
+            oldEmail: item.oldEmail,
+            newEmail: item.newEmail,
+            updated: true,
+            reason: null,
+          });
+          continue;
+        }
+
+        results.push({
+          id: item.id,
+          oldEmail: item.oldEmail,
+          newEmail: item.newEmail,
+          updated: false,
+          reason:
+            writeError.code === 11000
+              ? "email_already_exists"
+              : "unexpected_error",
+        });
+      }
+
+      return results;
+    } catch (chunkError: unknown) {
+      this.logger.warn(
+        `Mongo bulk email update chunk failed, fallback to per-contact updates: ${this.formatError(
+          chunkError,
+        )}`,
+      );
+
+      for (const item of chunk) {
+        try {
+          await this.prisma.contact.update({
+            where: { id: item.id },
+            data: this.buildEmailUpdateData({
+              currentEmail: item.oldEmail,
+              nextEmail: item.newEmail,
+            }),
+          });
+
+          results.push({
+            id: item.id,
+            oldEmail: item.oldEmail,
+            newEmail: item.newEmail,
+            updated: true,
+            reason: null,
+          });
+        } catch (err: unknown) {
+          if (
+            err instanceof PrismaClientKnownRequestError &&
+            err.code === "P2002"
+          ) {
+            results.push({
+              id: item.id,
+              oldEmail: item.oldEmail,
+              newEmail: item.newEmail,
+              updated: false,
+              reason: "email_already_exists",
+            });
+            continue;
+          }
+
+          results.push({
+            id: item.id,
+            oldEmail: item.oldEmail,
+            newEmail: item.newEmail,
+            updated: false,
+            reason: "unexpected_error",
+          });
+
+          this.logger.warn(
+            `Fallback per-contact email update failed for contact=${item.id} email=${item.newEmail}: ${this.formatError(
+              err,
+            )}`,
+          );
+        }
+      }
+
+      return results;
+    }
+  }
+
+  private syncBulkUpdatedEmailsBestEffort(items: BulkEmailUpdateItem[]) {
+    for (const item of items) {
+      this.brevo.deleteBrevoContactByEmail(item.oldEmail).catch((e) => {
+        this.logger.warn(`Brevo delete old email failed: ${e}`);
+      });
+
+      this.syncContactToBrevo(item.id).catch((e) => {
+        this.logger.warn(
+          `Brevo sync failed after bulk email update for contact=${item.id}: ${e}`,
+        );
+      });
+    }
   }
 
   public async assertGroupAndSubGroup(groupId: string, subGroupId: string) {
@@ -384,167 +552,102 @@ export class ContactsService {
       }
     }
 
-    const items: Array<{
-      id: string;
-      oldEmail: string;
-      newEmail: string;
-      updated: boolean;
-      reason?: string | null;
-    }> = [];
-
-    let updatedCount = 0;
-    let unchangedCount = 0;
-    let invalidCount = 0;
-    let conflictCount = 0;
-    let errorCount = 0;
-
-    const updatableItems = generated.filter((item) => !item.reason);
-    const itemsToActuallyUpdate = updatableItems.filter(
-      (item) => item.oldEmail !== item.newEmail,
-    );
-    const unchangedItems = updatableItems.filter(
-      (item) => item.oldEmail === item.newEmail,
-    );
+    const resultById = new Map<string, BulkEmailUpdateResultItem>();
 
     for (const item of generated) {
       if (item.reason === "generated_email_empty") {
-        invalidCount += 1;
-        items.push({
+        resultById.set(item.id, {
           id: item.id,
           oldEmail: item.oldEmail,
           newEmail: item.newEmail,
           updated: false,
           reason: item.reason,
         });
-      } else if (
+        continue;
+      }
+
+      if (
         item.reason === "duplicate_generated_email_in_selection" ||
         item.reason === "email_already_used_by_another_contact"
       ) {
-        conflictCount += 1;
-        items.push({
+        resultById.set(item.id, {
           id: item.id,
           oldEmail: item.oldEmail,
           newEmail: item.newEmail,
           updated: false,
           reason: item.reason,
         });
+        continue;
+      }
+
+      if (item.oldEmail === item.newEmail) {
+        resultById.set(item.id, {
+          id: item.id,
+          oldEmail: item.oldEmail,
+          newEmail: item.newEmail,
+          updated: false,
+          reason: "unchanged",
+        });
       }
     }
 
-    for (const item of unchangedItems) {
-      unchangedCount += 1;
-      items.push({
+    const itemsToActuallyUpdate: BulkEmailUpdateItem[] = generated
+      .filter((item) => !item.reason)
+      .filter((item) => item.oldEmail !== item.newEmail)
+      .map((item) => ({
         id: item.id,
         oldEmail: item.oldEmail,
         newEmail: item.newEmail,
-        updated: false,
-        reason: "unchanged",
-      });
-    }
+      }));
 
-    const chunks = this.chunkArray(itemsToActuallyUpdate, 100);
+    const chunks = this.chunkArray(itemsToActuallyUpdate, 500);
+    const successfulUpdates: BulkEmailUpdateItem[] = [];
 
     for (const chunk of chunks) {
-      try {
-        await this.prisma.$transaction(
-          chunk.map((item) =>
-            this.prisma.contact.update({
-              where: { id: item.id },
-              data: this.buildEmailUpdateData({
-                currentEmail: item.oldEmail,
-                nextEmail: item.newEmail,
-              }),
-            }),
-          ),
-        );
+      const chunkResults = await this.executeMongoBulkEmailUpdateChunk(chunk);
 
-        for (const item of chunk) {
-          updatedCount += 1;
+      for (const r of chunkResults) {
+        resultById.set(r.id, r);
 
-          items.push({
-            id: item.id,
-            oldEmail: item.oldEmail,
-            newEmail: item.newEmail,
-            updated: true,
-            reason: null,
+        if (r.updated) {
+          successfulUpdates.push({
+            id: r.id,
+            oldEmail: r.oldEmail,
+            newEmail: r.newEmail,
           });
-
-          this.brevo.deleteBrevoContactByEmail(item.oldEmail).catch((e) => {
-            this.logger.warn(`Brevo delete old email failed: ${e}`);
-          });
-
-          this.syncContactToBrevo(item.id).catch((e) => {
-            this.logger.warn(
-              `Brevo sync failed after bulk email update for contact=${item.id}: ${e}`,
-            );
-          });
-        }
-      } catch (chunkError: unknown) {
-        this.logger.warn(
-          `Bulk chunk email update failed, fallback to per-contact updates: ${this.formatError(chunkError)}`,
-        );
-
-        for (const item of chunk) {
-          try {
-            await this.prisma.contact.update({
-              where: { id: item.id },
-              data: this.buildEmailUpdateData({
-                currentEmail: item.oldEmail,
-                nextEmail: item.newEmail,
-              }),
-            });
-
-            updatedCount += 1;
-
-            items.push({
-              id: item.id,
-              oldEmail: item.oldEmail,
-              newEmail: item.newEmail,
-              updated: true,
-              reason: null,
-            });
-
-            this.brevo.deleteBrevoContactByEmail(item.oldEmail).catch((e) => {
-              this.logger.warn(`Brevo delete old email failed: ${e}`);
-            });
-
-            this.syncContactToBrevo(item.id).catch((e) => {
-              this.logger.warn(
-                `Brevo sync failed after bulk email update for contact=${item.id}: ${e}`,
-              );
-            });
-          } catch (err: unknown) {
-            if (
-              err instanceof PrismaClientKnownRequestError &&
-              err.code === "P2002"
-            ) {
-              conflictCount += 1;
-              items.push({
-                id: item.id,
-                oldEmail: item.oldEmail,
-                newEmail: item.newEmail,
-                updated: false,
-                reason: "email_already_exists",
-              });
-              continue;
-            }
-
-            errorCount += 1;
-            this.logger.warn(
-              `Bulk update email failed for contact=${item.id} email=${item.newEmail}: ${this.formatError(err)}`,
-            );
-
-            items.push({
-              id: item.id,
-              oldEmail: item.oldEmail,
-              newEmail: item.newEmail,
-              updated: false,
-              reason: "unexpected_error",
-            });
-          }
         }
       }
     }
+
+    this.syncBulkUpdatedEmailsBestEffort(successfulUpdates);
+
+    const items = generated.map((item) => {
+      return (
+        resultById.get(item.id) ?? {
+          id: item.id,
+          oldEmail: item.oldEmail,
+          newEmail: item.newEmail,
+          updated: false,
+          reason: "unexpected_error",
+        }
+      );
+    });
+
+    const updatedCount = items.filter((x) => x.updated).length;
+    const unchangedCount = items.filter((x) => x.reason === "unchanged").length;
+    const invalidCount = items.filter(
+      (x) => x.reason === "generated_email_empty",
+    ).length;
+    const conflictCount = items.filter((x) =>
+      [
+        "duplicate_generated_email_in_selection",
+        "email_already_used_by_another_contact",
+        "email_already_exists",
+      ].includes(String(x.reason ?? "")),
+    ).length;
+    const errorCount = items.filter(
+      (x) => x.reason === "unexpected_error",
+    ).length;
 
     return {
       requestedCount: ids.length,
