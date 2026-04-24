@@ -4,32 +4,10 @@ import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { SubmitLinkedinScrapeDto } from "./dto/submit-linkedin-scrape.dto";
 import { SubGroupsService } from "@/subgroups/subgroups.service";
 import { ContactStatus } from "@/contacts/type/contact-status.enum";
-
 import { PluginParamsService } from "@/plugin-params/plugin-params.service";
 import { PluginRestrictedParamType } from "generated/prisma/enums";
 import { PluginParam } from "generated/prisma/client";
-
-function normalizePart(s: string): string {
-  return (s ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // accents
-    .replace(/[^a-z0-9]+/g, ""); // garde alphanum (sans points)
-}
-
-function takeN(s: string, n?: number): string {
-  if (!s) return "";
-  if (!n || n <= 0) return s;
-  return s.slice(0, n);
-}
-
-function cleanupLocalPart(local: string): string {
-  return local
-    .replace(/[._-]{2,}/g, (m) => m[0]) // "..." -> "."
-    .replace(/^[._-]+/, "")
-    .replace(/[._-]+$/, "");
-}
+import { buildEmailFromTemplate } from "@/common/email/email-address.util";
 
 function parseProspectNameParts(names: string[]): {
   firstName: string;
@@ -55,35 +33,6 @@ function parseProspectNameParts(names: string[]): {
   const toVerify = tokens.length > 2;
 
   return { firstName, lastName, tokens, toVerify };
-}
-
-export function buildEmailFromTemplate(params: {
-  firstName: string;
-  lastName: string; // peut contenir des espaces ("dos santos")
-  domain: string;
-  extension: string;
-  pattern: string; // ex "{first:1}.{last}"
-}): string {
-  const domain = params.domain;
-  const ext = params.extension;
-  if (!domain || !ext) return "";
-
-  const tokenRe = /\{(first|last)(?::(\d+))?\}/g;
-
-  const local = params.pattern.replace(
-    tokenRe,
-    (_m, key: "first" | "last", nStr?: string) => {
-      const n = nStr ? Number(nStr) : undefined;
-      const raw = key === "first" ? params.firstName : params.lastName;
-      const value = normalizePart(raw); // "dos santos" -> "dossantos"
-      return takeN(value, n);
-    },
-  );
-
-  const cleanedLocal = cleanupLocalPart(local);
-  if (!cleanedLocal) return "";
-
-  return `${cleanedLocal}@${domain}.${ext}`;
 }
 
 /** Normalisation token (pour comparer des mots) */

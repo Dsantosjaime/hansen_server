@@ -24,6 +24,7 @@ import { CreateContactDto } from "./dto/create-contact.dto";
 import { UpdateContactDto } from "./dto/update-contact.dto";
 import { ContactStatus } from "./type/contact-status.enum";
 import { BulkDeleteContactsDto } from "./dto/bulk-delete-contacts.dto";
+import { BulkUpdateContactEmailsDto } from "./dto/bulk-update-email-contacts.dto";
 
 @ApiTags("contacts")
 @ApiBearerAuth("jwt")
@@ -39,15 +40,21 @@ export class ContactsController {
     return this.contactsService.create(dto);
   }
 
-  /**
-   * ✅ NEW: suppression massive
-   * POST /contacts/bulk-delete
-   */
   @Post("bulk-delete")
   @ApiOperation({ summary: "Supprimer plusieurs contacts (bulk)" })
   @CheckAbilities({ action: "delete", subject: "Contact" })
   bulkDelete(@Body() dto: BulkDeleteContactsDto) {
     return this.contactsService.bulkRemove(dto);
+  }
+
+  @Post("bulk-update-emails")
+  @ApiOperation({
+    summary:
+      "Mettre à jour l'email de plusieurs contacts à partir d'un template d'adresse email",
+  })
+  @CheckAbilities({ action: "update", subject: "Contact" })
+  bulkUpdateEmails(@Body() dto: BulkUpdateContactEmailsDto) {
+    return this.contactsService.bulkUpdateEmailsFromTemplate(dto);
   }
 
   @Get()

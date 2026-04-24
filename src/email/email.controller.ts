@@ -17,7 +17,6 @@ import {
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
-import { Request } from "express";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { CaslGuard } from "src/casl/casl.guard";
 import { CheckAbilities } from "src/casl/check-abilities.decorator";
