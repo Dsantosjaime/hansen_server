@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Headers,
   HttpCode,
@@ -8,6 +9,7 @@ import {
   Param,
   Post,
   Query,
+  Req,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -25,6 +27,8 @@ import { EmailService } from "./email.service";
 import { BrevoMarketingService } from "@/brevo/brevo-marketing.service";
 import { ScheduleSendCampaignDto } from "@/brevo/dto/schedule-send-campaign.dto";
 import { MarkTemplateAsSentDto } from "./dto/mark-template-as-sent.dto";
+import { UsersService } from "src/users/users.service";
+import { RequestWithAuth } from "@/auth/request-with-user.type";
 
 @ApiTags("emails")
 @Controller("emails")
@@ -34,6 +38,7 @@ export class EmailController {
   constructor(
     private readonly emailService: EmailService,
     private readonly brevoMarketing: BrevoMarketingService,
+    private readonly usersService: UsersService,
   ) {}
 
   private stringifyForLog(value: unknown) {
@@ -119,11 +124,24 @@ export class EmailController {
   @UseGuards(JwtAuthGuard, CaslGuard)
   @ApiOperation({
     summary:
-      "Créer une campagne depuis un templateId + envoyer uniquement aux nouveaux contacts ciblés (temp list pool <= 30)",
+      "Créer une campagne depuis un templateId + envoyer uniquement aux nouveaux contacts ciblés (temp list pool <= 30) — la signature du user courant est automatiquement injectée dans le template",
   })
   @CheckAbilities({ action: "create", subject: "Email" })
-  sendCampaign(@Body() dto: ScheduleSendCampaignDto) {
-    return this.emailService.sendMarketingCampaign(dto);
+  async sendCampaign(
+    @Body() dto: ScheduleSendCampaignDto,
+    @Req() req: RequestWithAuth,
+  ) {
+    const kcUser = req.user;
+    if (!kcUser?.sub) {
+      throw new ForbiddenException("Missing user");
+    }
+
+    // Récupération du user courant pour injecter sa signature dans le template
+    const sender = await this.usersService.getUserByKeycloakId(kcUser.sub);
+
+    return this.emailService.sendMarketingCampaign(dto, {
+      signatureUserId: sender.id,
+    });
   }
 
   @Post("marketing/campaigns/mark-sent")

@@ -33,6 +33,16 @@ export type SignatureParams = {
   sender_phone_mobile: string;
 };
 
+// Échappe les caractères HTML pour éviter d'injecter du markup via les params
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 @Injectable()
 export class BrevoMarketingService {
   private readonly logger = new Logger(BrevoMarketingService.name);
@@ -69,8 +79,7 @@ export class BrevoMarketingService {
 
   /**
    * Construit les params signature à partir d'un userId.
-   * Les champs non renseignés sont des chaînes vides : les templates Brevo
-   * peuvent utiliser des conditions Mustache type {{#params.sender_phone_fixed}}...{{/...}}.
+   * Les champs non renseignés sont des chaînes vides.
    */
   async buildSignatureParamsFromUser(userId: string): Promise<SignatureParams> {
     const user = await this.prisma.user.findUnique({
@@ -95,6 +104,29 @@ export class BrevoMarketingService {
       sender_phone_fixed: user.phoneFixed ?? "",
       sender_phone_mobile: user.phoneMobile ?? "",
     };
+  }
+
+  /**
+   * Remplace les placeholders {{ params.key }} dans le HTML par les valeurs fournies.
+   *
+   * - Tolère les espaces : {{params.key}}, {{ params.key }}, {{ params.key   }}, etc.
+   * - Échappe les caractères HTML des valeurs (sécurité anti-injection)
+   * - Les variables non fournies sont remplacées par une chaîne vide
+   */
+  applyParamsToHtml(html: string, params: Record<string, string>): string {
+    let result = html;
+
+    // 1) Remplacement explicite pour chaque clé fournie
+    for (const [key, value] of Object.entries(params)) {
+      const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`{{\\s*params\\.${safeKey}\\s*}}`, "g");
+      result = result.replace(regex, escapeHtml(value));
+    }
+
+    // 2) Nettoyage : tout {{ params.xxx }} restant → chaîne vide
+    result = result.replace(/{{\s*params\.[^}]*\s*}}/g, "");
+
+    return result;
   }
 
   /**
@@ -420,9 +452,12 @@ export class BrevoMarketingService {
   /**
    * Campagne vers listIds (temp list)
    *
-   * Si `signatureUserId` est fourni, on récupère les infos signature du user
-   * et on les passe en `params` à Brevo. Le template peut alors utiliser
-   * {{ params.sender_name }}, {{ params.sender_job_title }}, etc.
+   * Si `signatureUserId` est fourni :
+   *  1. On récupère le HTML du template
+   *  2. On y substitue {{ params.sender_* }} par les vraies valeurs du user
+   *  3. On crée la campagne avec ce HTML inline (htmlContent) au lieu du templateId
+   *
+   * Sinon : flow classique avec templateId.
    */
   async createAndSendCampaignFromTemplateToLists(args: {
     templateId: number;
@@ -434,10 +469,8 @@ export class BrevoMarketingService {
     senderOverride?: { name: string; email: string };
     replyToOverride?: string;
 
-    // NEW : userId à utiliser pour construire la signature
     signatureUserId?: string;
-    // Permet de passer des params supplémentaires si besoin
-    extraParams?: Record<string, unknown>;
+    extraParams?: Record<string, string>;
   }): Promise<{ campaignId: number }> {
     if (!args.listIds.length) {
       throw new NotFoundException("No target lists (empty listIds).");
@@ -448,27 +481,52 @@ export class BrevoMarketingService {
       email: this.senderEmail,
     };
 
-    // Construction des params (signature + extras éventuels)
-    let params: Record<string, unknown> | undefined = undefined;
+    // Détermine si une substitution est nécessaire
+    const needsSubstitution =
+      !!args.signatureUserId ||
+      (args.extraParams && Object.keys(args.extraParams).length > 0);
 
-    if (args.signatureUserId) {
-      const signatureParams = await this.buildSignatureParamsFromUser(
-        args.signatureUserId,
+    let htmlContent: string | undefined = undefined;
+
+    if (needsSubstitution) {
+      // 1. Récupération du template avec son HTML
+      const template = await this.brevo.getEmailTemplate(args.templateId);
+
+      if (!template.htmlContent) {
+        throw new InternalServerErrorException(
+          `Template ${args.templateId} has no htmlContent — cannot apply signature substitution`,
+        );
+      }
+
+      // 2. Construction des params (signature + extras)
+      const params: Record<string, string> = {};
+      if (args.signatureUserId) {
+        const signatureParams = await this.buildSignatureParamsFromUser(
+          args.signatureUserId,
+        );
+        Object.assign(params, signatureParams);
+      }
+      if (args.extraParams) {
+        Object.assign(params, args.extraParams);
+      }
+
+      // 3. Substitution
+      htmlContent = this.applyParamsToHtml(template.htmlContent, params);
+
+      this.logger.debug(
+        `Campaign HTML substituted with ${Object.keys(params).length} params for template ${args.templateId}`,
       );
-      params = { ...signatureParams, ...(args.extraParams ?? {}) };
-    } else if (args.extraParams) {
-      params = { ...args.extraParams };
     }
 
+    // 4. Création de la campagne : htmlContent OU templateId (mutuellement exclusifs)
     const created = await this.brevo.createCampaignFromTemplate({
       name: args.name,
       sender: currentSender,
       listIds: args.listIds,
-      templateId: args.templateId,
       subject: args.subject,
       replyTo: args.replyToOverride ?? currentSender.email,
+      ...(htmlContent ? { htmlContent } : { templateId: args.templateId }),
       ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
-      ...(params ? { params } : {}),
     });
 
     const campaignId = Number(created.id);

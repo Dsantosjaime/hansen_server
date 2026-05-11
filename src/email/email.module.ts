@@ -3,9 +3,10 @@ import { PrismaModule } from "src/prisma/prisma.module";
 import { EmailController } from "./email.controller";
 import { EmailService } from "./email.service";
 import { BrevoModule } from "@/brevo/brevo.module";
+import { UsersModule } from "@/users/users.module";
 
 @Module({
-  imports: [PrismaModule, BrevoModule],
+  imports: [PrismaModule, BrevoModule, UsersModule],
   controllers: [EmailController],
   providers: [EmailService],
   exports: [EmailService],

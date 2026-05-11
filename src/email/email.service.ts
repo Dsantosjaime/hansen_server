@@ -366,7 +366,14 @@ export class EmailService {
     };
   }
 
-  async sendMarketingCampaign(dto: ScheduleSendCampaignDto) {
+  /**
+   * NEW : accepte un signatureUserId optionnel pour personnaliser la signature
+   * du template avec les infos du user qui envoie.
+   */
+  async sendMarketingCampaign(
+    dto: ScheduleSendCampaignDto,
+    options?: { signatureUserId?: string },
+  ) {
     if (dto.scheduledAt) {
       throw new BadRequestException("Scheduled is not supported yet.");
     }
@@ -442,6 +449,8 @@ export class EmailService {
         subject,
         listIds: [tempListId],
         attachmentUrl,
+        // NEW : signature personnalisée
+        signatureUserId: options?.signatureUserId,
       });
 
     await this.brevoMarketing.markTempListUsed({

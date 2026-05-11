@@ -3,6 +3,7 @@ export type BrevoEmailTemplate = {
   name: string;
   subject: string;
   isActive: boolean;
+  htmlContent: string;
 };
 
 export type BrevoEmailCampaign = {
@@ -15,24 +16,25 @@ export type BrevoEmailCampaign = {
   modifiedAt?: string | null;
 };
 
+/**
+ * Pour créer une campagne, on doit fournir SOIT templateId SOIT htmlContent
+ * (exclusifs selon la doc Brevo).
+ */
 export type BrevoCreateCampaignFromTemplateInput = {
   name: string;
   sender: { name: string; email: string };
   listIds: number[];
 
-  templateId: number;
+  /** Mutuellement exclusif avec htmlContent */
+  templateId?: number;
+  /** Mutuellement exclusif avec templateId — HTML inline */
+  htmlContent?: string;
+
   subject: string;
 
   replyTo?: string;
   scheduledAt?: string;
   attachmentUrl?: string;
-
-  /**
-   * Variables transmises au moteur de template Brevo.
-   * Accessibles dans le template via {{ params.key }}.
-   * Statique pour toute la campagne (contrairement aux emails transactionnels).
-   */
-  params?: Record<string, unknown>;
 };
 
 export interface BrevoClient {

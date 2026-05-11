@@ -70,6 +70,7 @@ export const brevoClientProvider: Provider = {
           name: String(t.name ?? ""),
           subject: String(t.subject ?? ""),
           isActive: Boolean(t.isActive ?? true),
+          htmlContent: String(t.htmlContent ?? ""),
         }));
       },
 
@@ -84,19 +85,30 @@ export const brevoClientProvider: Provider = {
           name: String(data?.name ?? ""),
           subject: String(data?.subject ?? ""),
           isActive: Boolean(data?.isActive ?? true),
+          htmlContent: String(data?.htmlContent ?? ""),
         };
       },
 
       async createCampaignFromTemplate(
         input: BrevoCreateCampaignFromTemplateInput,
       ): Promise<{ id: number }> {
+        // templateId et htmlContent sont mutuellement exclusifs côté Brevo.
+        // Si htmlContent est fourni, on ne doit PAS envoyer templateId.
+        if (!input.templateId && !input.htmlContent) {
+          throw new Error(
+            "createCampaignFromTemplate: either templateId or htmlContent must be provided",
+          );
+        }
+
         const payload: any = {
           name: input.name,
           subject: input.subject,
           sender: input.sender,
           type: "classic",
           recipients: { listIds: input.listIds },
-          templateId: input.templateId,
+          ...(input.htmlContent
+            ? { htmlContent: input.htmlContent }
+            : { templateId: input.templateId }),
           ...(input.replyTo ? { replyTo: input.replyTo } : {}),
           ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
           ...(input.attachmentUrl
