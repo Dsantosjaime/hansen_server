@@ -11,11 +11,24 @@ export type UserWithRole = Prisma.UserGetPayload<{
   include: { role: true };
 }>;
 
+type CreateUserInput = {
+  name: string;
+  email: string;
+  temporaryPassword: string;
+  roleId: string;
+  jobTitle?: string;
+  phoneFixed?: string;
+  phoneMobile?: string;
+};
+
 type UpdateUserInput = {
-  name?: string | null;
-  email?: string | null;
+  name?: string;
+  email?: string;
   roleId?: string;
   temporaryPassword?: string;
+  jobTitle?: string | null;
+  phoneFixed?: string | null;
+  phoneMobile?: string | null;
 };
 
 @Injectable()
@@ -73,7 +86,6 @@ export class UsersService {
     const senderId = user.brevoSenderId;
     if (!senderId) return;
 
-    // Best-effort: ne pas bloquer un update admin si Brevo renvoie une erreur
     await this.brevoMarketing.deleteSender(senderId).catch(() => undefined);
 
     await this.prisma.user.update({
@@ -91,14 +103,12 @@ export class UsersService {
 
     if (!this.canCreateEmail(after)) return;
 
-    // On supprime l'ancien sender si existant (best-effort)
     if (before.brevoSenderId) {
       await this.brevoMarketing
         .deleteSender(before.brevoSenderId)
         .catch(() => undefined);
     }
 
-    // Puis on recrée si possible
     if (!after.email) {
       await this.prisma.user.update({
         where: { id: after.id },
@@ -124,16 +134,11 @@ export class UsersService {
     });
   }
 
-  async createUserWithRole(
-    name: string,
-    temporaryPassword: string,
-    roleId: string,
-    email: string,
-  ): Promise<UserWithRole> {
+  async createUserWithRole(input: CreateUserInput): Promise<UserWithRole> {
     const kcUser = await this.keycloakAdminUsers.createUser(
-      name,
-      email,
-      temporaryPassword,
+      input.name,
+      input.email,
+      input.temporaryPassword,
     );
 
     if (!kcUser?.id) {
@@ -144,14 +149,20 @@ export class UsersService {
       const created = await this.prisma.user.create({
         data: {
           keycloakId: kcUser.id,
-          email: email ?? null,
-          name: name ?? null,
-          role: { connect: { id: roleId } },
+          email: input.email,
+          name: input.name,
+          role: { connect: { id: input.roleId } },
+          ...(input.jobTitle !== undefined ? { jobTitle: input.jobTitle } : {}),
+          ...(input.phoneFixed !== undefined
+            ? { phoneFixed: input.phoneFixed }
+            : {}),
+          ...(input.phoneMobile !== undefined
+            ? { phoneMobile: input.phoneMobile }
+            : {}),
         },
         include: { role: true },
       });
 
-      // Provision sender si le rôle contient Email:create
       if (this.canCreateEmail(created)) {
         await this.ensureBrevoSenderForUserId(created.id);
         return this.prisma.user.findUniqueOrThrow({
@@ -197,8 +208,8 @@ export class UsersService {
 
     if (input.email !== undefined || input.name !== undefined) {
       await this.keycloakAdminUsers.updateUser(existing.keycloakId, {
-        email: input.email ?? undefined,
-        name: input.name ?? undefined,
+        email: input.email,
+        name: input.name,
       });
     }
 
@@ -215,6 +226,14 @@ export class UsersService {
         ...(input.email !== undefined ? { email: input.email } : {}),
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.roleId ? { role: { connect: { id: input.roleId } } } : {}),
+        // Champs nullables : undefined = ne pas toucher, null = effacer
+        ...(input.jobTitle !== undefined ? { jobTitle: input.jobTitle } : {}),
+        ...(input.phoneFixed !== undefined
+          ? { phoneFixed: input.phoneFixed }
+          : {}),
+        ...(input.phoneMobile !== undefined
+          ? { phoneMobile: input.phoneMobile }
+          : {}),
       },
       include: { role: true },
     });
@@ -246,7 +265,6 @@ export class UsersService {
       throw new NotFoundException(`User ${userId} not found`);
     }
 
-    // Cleanup sender (best-effort)
     await this.removeBrevoSenderForUserId(existing.id).catch(() => undefined);
 
     await this.keycloakAdminUsers.deleteUser(existing.keycloakId);
@@ -262,8 +280,8 @@ export class UsersService {
       return await this.prisma.user.update({
         where: { keycloakId: payload.sub },
         data: {
-          email: payload.email ?? null,
-          name: payload.name ?? payload.preferred_username ?? null,
+          email: payload.email ?? undefined,
+          name: payload.name ?? payload.preferred_username ?? undefined,
         },
         include: { role: true },
       });

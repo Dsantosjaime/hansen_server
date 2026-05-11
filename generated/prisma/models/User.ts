@@ -41,6 +41,9 @@ export type UserMinAggregateOutputType = {
   name: string | null
   roleId: string | null
   brevoSenderId: number | null
+  phoneFixed: string | null
+  phoneMobile: string | null
+  jobTitle: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +55,9 @@ export type UserMaxAggregateOutputType = {
   name: string | null
   roleId: string | null
   brevoSenderId: number | null
+  phoneFixed: string | null
+  phoneMobile: string | null
+  jobTitle: string | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -63,6 +69,9 @@ export type UserCountAggregateOutputType = {
   name: number
   roleId: number
   brevoSenderId: number
+  phoneFixed: number
+  phoneMobile: number
+  jobTitle: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -84,6 +93,9 @@ export type UserMinAggregateInputType = {
   name?: true
   roleId?: true
   brevoSenderId?: true
+  phoneFixed?: true
+  phoneMobile?: true
+  jobTitle?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -95,6 +107,9 @@ export type UserMaxAggregateInputType = {
   name?: true
   roleId?: true
   brevoSenderId?: true
+  phoneFixed?: true
+  phoneMobile?: true
+  jobTitle?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,6 +121,9 @@ export type UserCountAggregateInputType = {
   name?: true
   roleId?: true
   brevoSenderId?: true
+  phoneFixed?: true
+  phoneMobile?: true
+  jobTitle?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -204,6 +222,9 @@ export type UserGroupByOutputType = {
   name: string | null
   roleId: string | null
   brevoSenderId: number | null
+  phoneFixed: string | null
+  phoneMobile: string | null
+  jobTitle: string | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -238,6 +259,9 @@ export type UserWhereInput = {
   name?: Prisma.StringNullableFilter<"User"> | string | null
   roleId?: Prisma.StringNullableFilter<"User"> | string | null
   brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null
+  phoneFixed?: Prisma.StringNullableFilter<"User"> | string | null
+  phoneMobile?: Prisma.StringNullableFilter<"User"> | string | null
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
@@ -250,6 +274,9 @@ export type UserOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
   brevoSenderId?: Prisma.SortOrder
+  phoneFixed?: Prisma.SortOrder
+  phoneMobile?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   role?: Prisma.RoleOrderByWithRelationInput
@@ -265,6 +292,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringNullableFilter<"User"> | string | null
   roleId?: Prisma.StringNullableFilter<"User"> | string | null
   brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null
+  phoneFixed?: Prisma.StringNullableFilter<"User"> | string | null
+  phoneMobile?: Prisma.StringNullableFilter<"User"> | string | null
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   role?: Prisma.XOR<Prisma.RoleNullableScalarRelationFilter, Prisma.RoleWhereInput> | null
@@ -277,6 +307,9 @@ export type UserOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
   brevoSenderId?: Prisma.SortOrder
+  phoneFixed?: Prisma.SortOrder
+  phoneMobile?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -296,6 +329,9 @@ export type UserScalarWhereWithAggregatesInput = {
   name?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   roleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   brevoSenderId?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
+  phoneFixed?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  phoneMobile?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  jobTitle?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -306,6 +342,9 @@ export type UserCreateInput = {
   email?: string | null
   name?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   role?: Prisma.RoleCreateNestedOneWithoutUsersInput
@@ -318,6 +357,9 @@ export type UserUncheckedCreateInput = {
   name?: string | null
   roleId?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -327,6 +369,9 @@ export type UserUpdateInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   role?: Prisma.RoleUpdateOneWithoutUsersNestedInput
@@ -338,6 +383,9 @@ export type UserUncheckedUpdateInput = {
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -349,6 +397,9 @@ export type UserCreateManyInput = {
   name?: string | null
   roleId?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -358,6 +409,9 @@ export type UserUpdateManyMutationInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -368,6 +422,9 @@ export type UserUncheckedUpdateManyInput = {
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -379,6 +436,9 @@ export type UserCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
   brevoSenderId?: Prisma.SortOrder
+  phoneFixed?: Prisma.SortOrder
+  phoneMobile?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -394,6 +454,9 @@ export type UserMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
   brevoSenderId?: Prisma.SortOrder
+  phoneFixed?: Prisma.SortOrder
+  phoneMobile?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -405,6 +468,9 @@ export type UserMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   roleId?: Prisma.SortOrder
   brevoSenderId?: Prisma.SortOrder
+  phoneFixed?: Prisma.SortOrder
+  phoneMobile?: Prisma.SortOrder
+  jobTitle?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -493,6 +559,9 @@ export type UserCreateWithoutRoleInput = {
   email?: string | null
   name?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -503,6 +572,9 @@ export type UserUncheckedCreateWithoutRoleInput = {
   email?: string | null
   name?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -542,6 +614,9 @@ export type UserScalarWhereInput = {
   name?: Prisma.StringNullableFilter<"User"> | string | null
   roleId?: Prisma.StringNullableFilter<"User"> | string | null
   brevoSenderId?: Prisma.IntNullableFilter<"User"> | number | null
+  phoneFixed?: Prisma.StringNullableFilter<"User"> | string | null
+  phoneMobile?: Prisma.StringNullableFilter<"User"> | string | null
+  jobTitle?: Prisma.StringNullableFilter<"User"> | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
 }
@@ -552,6 +627,9 @@ export type UserCreateManyRoleInput = {
   email?: string | null
   name?: string | null
   brevoSenderId?: number | null
+  phoneFixed?: string | null
+  phoneMobile?: string | null
+  jobTitle?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -561,6 +639,9 @@ export type UserUpdateWithoutRoleInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -570,6 +651,9 @@ export type UserUncheckedUpdateWithoutRoleInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -579,6 +663,9 @@ export type UserUncheckedUpdateManyWithoutRoleInput = {
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   brevoSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  phoneFixed?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  phoneMobile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jobTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -592,6 +679,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   name?: boolean
   roleId?: boolean
   brevoSenderId?: boolean
+  phoneFixed?: boolean
+  phoneMobile?: boolean
+  jobTitle?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   role?: boolean | Prisma.User$roleArgs<ExtArgs>
@@ -606,11 +696,14 @@ export type UserSelectScalar = {
   name?: boolean
   roleId?: boolean
   brevoSenderId?: boolean
+  phoneFixed?: boolean
+  phoneMobile?: boolean
+  jobTitle?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "keycloakId" | "email" | "name" | "roleId" | "brevoSenderId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "keycloakId" | "email" | "name" | "roleId" | "brevoSenderId" | "phoneFixed" | "phoneMobile" | "jobTitle" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   role?: boolean | Prisma.User$roleArgs<ExtArgs>
 }
@@ -627,6 +720,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     name: string | null
     roleId: string | null
     brevoSenderId: number | null
+    phoneFixed: string | null
+    phoneMobile: string | null
+    jobTitle: string | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1028,6 +1124,9 @@ export interface UserFieldRefs {
   readonly name: Prisma.FieldRef<"User", 'String'>
   readonly roleId: Prisma.FieldRef<"User", 'String'>
   readonly brevoSenderId: Prisma.FieldRef<"User", 'Int'>
+  readonly phoneFixed: Prisma.FieldRef<"User", 'String'>
+  readonly phoneMobile: Prisma.FieldRef<"User", 'String'>
+  readonly jobTitle: Prisma.FieldRef<"User", 'String'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

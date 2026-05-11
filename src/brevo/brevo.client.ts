@@ -26,6 +26,13 @@ export type BrevoCreateCampaignFromTemplateInput = {
   replyTo?: string;
   scheduledAt?: string;
   attachmentUrl?: string;
+
+  /**
+   * Variables transmises au moteur de template Brevo.
+   * Accessibles dans le template via {{ params.key }}.
+   * Statique pour toute la campagne (contrairement aux emails transactionnels).
+   */
+  params?: Record<string, unknown>;
 };
 
 export interface BrevoClient {

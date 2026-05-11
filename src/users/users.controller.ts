@@ -58,12 +58,15 @@ export class UsersController {
   })
   @CheckAbilities({ action: "create", subject: "User" })
   async createUser(@Body() dto: CreateUserWithRoleDto) {
-    return this.usersService.createUserWithRole(
-      dto.name,
-      dto.temporaryPassword,
-      dto.roleId,
-      dto.email,
-    );
+    return this.usersService.createUserWithRole({
+      name: dto.name,
+      email: dto.email,
+      temporaryPassword: dto.temporaryPassword,
+      roleId: dto.roleId,
+      jobTitle: dto.jobTitle,
+      phoneFixed: dto.phoneFixed,
+      phoneMobile: dto.phoneMobile,
+    });
   }
 
   @Patch(":id")
@@ -76,6 +79,9 @@ export class UsersController {
       email: dto.email,
       roleId: dto.roleId,
       temporaryPassword: dto.temporaryPassword,
+      jobTitle: dto.jobTitle,
+      phoneFixed: dto.phoneFixed,
+      phoneMobile: dto.phoneMobile,
     });
   }
 

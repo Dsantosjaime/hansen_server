@@ -24,6 +24,15 @@ function addHours(d: Date, hours: number) {
   return new Date(d.getTime() + hours * 3600 * 1000);
 }
 
+// Type des params signature passés à Brevo
+export type SignatureParams = {
+  sender_name: string;
+  sender_email: string;
+  sender_job_title: string;
+  sender_phone_fixed: string;
+  sender_phone_mobile: string;
+};
+
 @Injectable()
 export class BrevoMarketingService {
   private readonly logger = new Logger(BrevoMarketingService.name);
@@ -50,13 +59,42 @@ export class BrevoMarketingService {
       this.config.get<string>("BREVO_SYNC_CHUNK_SIZE") ?? 100,
     );
 
-    // Pool de 30 (par défaut) + réservation (par défaut 48h)
     this.tempPoolSize = Number(
       this.config.get<string>("BREVO_TEMP_LIST_POOL_SIZE") ?? 30,
     );
     this.tempReservationHours = Number(
       this.config.get<string>("BREVO_TEMP_LIST_RESERVATION_HOURS") ?? 48,
     );
+  }
+
+  /**
+   * Construit les params signature à partir d'un userId.
+   * Les champs non renseignés sont des chaînes vides : les templates Brevo
+   * peuvent utiliser des conditions Mustache type {{#params.sender_phone_fixed}}...{{/...}}.
+   */
+  async buildSignatureParamsFromUser(userId: string): Promise<SignatureParams> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        email: true,
+        jobTitle: true,
+        phoneFixed: true,
+        phoneMobile: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User ${userId} not found`);
+    }
+
+    return {
+      sender_name: user.name ?? "",
+      sender_email: user.email ?? "",
+      sender_job_title: user.jobTitle ?? "",
+      sender_phone_fixed: user.phoneFixed ?? "",
+      sender_phone_mobile: user.phoneMobile ?? "",
+    };
   }
 
   /**
@@ -123,9 +161,6 @@ export class BrevoMarketingService {
     return listId;
   }
 
-  /**
-   * Crée une liste temporaire brute (sans pool)
-   */
   async createTemporaryList(label: string): Promise<number> {
     const created = await this.brevo.createList(label);
     const listId = Number(created.id);
@@ -134,9 +169,6 @@ export class BrevoMarketingService {
     return listId;
   }
 
-  /**
-   * Pool: acquire une liste temporaire (crée ou recycle) avec limite à 30.
-   */
   async acquireTemporaryList(args: {
     label: string;
   }): Promise<{ listId: number; tempListDbId: string }> {
@@ -144,7 +176,6 @@ export class BrevoMarketingService {
 
     const count = await this.prisma.brevoTempList.count();
 
-    // 1) Si on est sous la limite : create direct
     if (count < this.tempPoolSize) {
       const listId = await this.createTemporaryList(args.label);
 
@@ -163,7 +194,6 @@ export class BrevoMarketingService {
       return { listId, tempListDbId: row.id };
     }
 
-    // 2) Recycle la plus ancienne "recyclable"
     const candidate = await this.prisma.brevoTempList.findFirst({
       where: { reservedUntil: { lt: now } },
       orderBy: { createdAt: "asc" },
@@ -176,7 +206,6 @@ export class BrevoMarketingService {
       );
     }
 
-    // Supprime côté Brevo (best effort), puis DB
     try {
       await this.brevo.deleteList(candidate.brevoListId);
     } catch (e: any) {
@@ -188,7 +217,6 @@ export class BrevoMarketingService {
 
     await this.prisma.brevoTempList.delete({ where: { id: candidate.id } });
 
-    // Recrée une nouvelle liste
     const newListId = await this.createTemporaryList(args.label);
 
     const row = await this.prisma.brevoTempList.create({
@@ -282,10 +310,6 @@ export class BrevoMarketingService {
     };
   }
 
-  /**
-   * Nettoyage global => supprime toutes les lists Brevo stockées sur subGroup.brevoListId
-   * - dryRun=true : ne supprime rien, mais retourne ce qui serait supprimé
-   */
   async cleanupAllSubGroupLists(args?: { dryRun?: boolean }): Promise<{
     dryRun: boolean;
     totalWithListId: number;
@@ -395,6 +419,10 @@ export class BrevoMarketingService {
 
   /**
    * Campagne vers listIds (temp list)
+   *
+   * Si `signatureUserId` est fourni, on récupère les infos signature du user
+   * et on les passe en `params` à Brevo. Le template peut alors utiliser
+   * {{ params.sender_name }}, {{ params.sender_job_title }}, etc.
    */
   async createAndSendCampaignFromTemplateToLists(args: {
     templateId: number;
@@ -405,6 +433,11 @@ export class BrevoMarketingService {
 
     senderOverride?: { name: string; email: string };
     replyToOverride?: string;
+
+    // NEW : userId à utiliser pour construire la signature
+    signatureUserId?: string;
+    // Permet de passer des params supplémentaires si besoin
+    extraParams?: Record<string, unknown>;
   }): Promise<{ campaignId: number }> {
     if (!args.listIds.length) {
       throw new NotFoundException("No target lists (empty listIds).");
@@ -415,6 +448,18 @@ export class BrevoMarketingService {
       email: this.senderEmail,
     };
 
+    // Construction des params (signature + extras éventuels)
+    let params: Record<string, unknown> | undefined = undefined;
+
+    if (args.signatureUserId) {
+      const signatureParams = await this.buildSignatureParamsFromUser(
+        args.signatureUserId,
+      );
+      params = { ...signatureParams, ...(args.extraParams ?? {}) };
+    } else if (args.extraParams) {
+      params = { ...args.extraParams };
+    }
+
     const created = await this.brevo.createCampaignFromTemplate({
       name: args.name,
       sender: currentSender,
@@ -423,6 +468,7 @@ export class BrevoMarketingService {
       subject: args.subject,
       replyTo: args.replyToOverride ?? currentSender.email,
       ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
+      ...(params ? { params } : {}),
     });
 
     const campaignId = Number(created.id);
@@ -437,9 +483,6 @@ export class BrevoMarketingService {
     return { campaignId };
   }
 
-  /**
-   * (Legacy) conserver si utilisé ailleurs
-   */
   sendCampaignFromTemplate(dto: ScheduleSendCampaignDto): Promise<{
     campaignId: number;
     listIds: number[];

@@ -20,6 +20,10 @@ model User {
 
   brevoSenderId Int?
 
+  phoneFixed  String?
+  phoneMobile String?
+  jobTitle    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
