@@ -141,6 +141,7 @@ export class EmailController {
 
     return this.emailService.sendMarketingCampaign(dto, {
       signatureUserId: sender.id,
+      senderEmail: sender.email,
     });
   }
 

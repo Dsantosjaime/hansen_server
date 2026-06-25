@@ -372,7 +372,7 @@ export class EmailService {
    */
   async sendMarketingCampaign(
     dto: ScheduleSendCampaignDto,
-    options?: { signatureUserId?: string },
+    options?: { signatureUserId?: string; senderEmail?: string | null },
   ) {
     if (dto.scheduledAt) {
       throw new BadRequestException("Scheduled is not supported yet.");
@@ -449,6 +449,10 @@ export class EmailService {
         subject,
         listIds: [tempListId],
         attachmentUrl,
+        senderOverride: {
+          email: options?.senderEmail ?? "",
+          name: "Hansen",
+        },
         // NEW : signature personnalisée
         signatureUserId: options?.signatureUserId,
       });

@@ -3,7 +3,6 @@ import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
-import type { Express } from "express";
 
 // Nettoie le nom de fichier pour qu'il soit safe dans une URL et un filesystem,
 // tout en restant lisible pour le destinataire de l'email.
