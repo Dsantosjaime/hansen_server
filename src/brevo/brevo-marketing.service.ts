@@ -467,7 +467,6 @@ export class BrevoMarketingService {
     attachmentUrl?: string;
 
     senderOverride?: { name: string; email: string };
-    replyToOverride?: string;
 
     signatureUserId?: string;
     extraParams?: Record<string, string>;
@@ -524,7 +523,7 @@ export class BrevoMarketingService {
       sender: currentSender,
       listIds: args.listIds,
       subject: args.subject,
-      replyTo: args.replyToOverride ?? currentSender.email,
+      replyTo: args.senderOverride?.email ?? currentSender.email,
       ...(htmlContent ? { htmlContent } : { templateId: args.templateId }),
       ...(args.attachmentUrl ? { attachmentUrl: args.attachmentUrl } : {}),
     });
